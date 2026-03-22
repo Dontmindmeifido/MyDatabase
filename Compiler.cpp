@@ -7,7 +7,7 @@
 using namespace std;
 
 /*
-CREATE (h1, h2, ...) in TABLE_NAME
+CREATE (h1:VARCHAR, h2:NUMBER, ...) in TABLE_NAME
 
 ADDROW (c1, c2, ...) in TABLE_NAME
 
@@ -95,7 +95,7 @@ struct Query {
     }
 
     Table runQuery() {
-        if (action == "create") {
+        if (action == "create") { // Syntax HNAME:DATATYPE.
             create->createTable(destination, source);
             return *(this->nullTbl);
         } else if (action == "addrow") {
@@ -198,5 +198,34 @@ public:
         } else {
             cout << "SYNTAX ERROR";
         }
+    }
+
+    vector<string> getWords(string queries) {
+        vector<string> wordList = {""};
+
+        for (auto x: queries) {
+            if ((x == ' ' || x == '\n') && wordList[wordList.size() - 1] != "") {
+                wordList.push_back("");
+            }
+
+            wordList[wordList.size() - 1] += x;
+        }
+
+        string sum = "";
+        for (int i = 0; i < wordList.size(); i++) {
+            const string orgsum = sum;
+            for (int j = 0; j < wordList[i].size(); j++) {
+                if (wordList[i][j] == '\n') {
+                    sum += "\n";
+                } else {
+                    sum += " ";
+                }
+            }
+
+            wordList[i] = orgsum + wordList[i];
+        }
+
+        // Ok so basically this is decent, but do calculate the colors here based on what the word is and stuff;
+        return wordList;
     }
 };

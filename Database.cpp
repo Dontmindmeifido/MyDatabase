@@ -219,12 +219,24 @@ public:
 
 class Table {
     vector<Row> tableData;
+    vector<string> tableDataTypes;
     string tableName;
 
 public:
-    Table(vector<string> header, string tableName) {
+    Table(vector<string> header, vector<string> datatypes, string tableName) {
         this->tableData.push_back(Row(header));
+        this->tableDataTypes = datatypes;
         this->tableName = tableName;
+    }
+
+    bool verifyDataTypes(Row tableData) {
+        for (int i = 0; i < tableDataTypes.size(); i++) {
+            if (tableDataTypes[i] != tableData.getRowData()[i].getData()->getType()) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     vector<Row>& getTableData() {
@@ -269,4 +281,4 @@ public:
     }
 };
 
-Table& Database::nullTbl = *(new Table({"NULL_TABLE"}, "NULL_TABLE"));
+Table& Database::nullTbl = *(new Table({"NULL_TABLE"}, {"NULL_TABLE"}, "NULL_TABLE"));

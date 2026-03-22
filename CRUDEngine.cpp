@@ -20,7 +20,27 @@ public:
 
     void createTable(string tableName, vector<string> header) {
         if (this->database->getTable(tableName).getTableName() == "NULL_TABLE") {
-            this->database->getDatabaseData().push_back(Table(header, tableName));
+            vector<string> headers;
+            vector<string> datatypes;
+
+            for (int i = 0; i < header.size(); i++) {
+                bool side = true;
+                headers.push_back("");
+                datatypes.push_back("");
+                for (auto x: header[i]) {
+                    if (x == ':') {
+                        side = false;
+                    } else {
+                        if (side) {
+                            headers[headers.size() - 1] += x;
+                        } else {
+                            datatypes[datatypes.size() - 1] += x;
+                        }
+                    }
+                }
+            }
+
+            this->database->getDatabaseData().push_back(Table(headers, datatypes, tableName));
         } else {
             cout << "TABLE ALREADY EXISTS";
         }
@@ -33,7 +53,7 @@ public:
 
     Table readTable(string tableName, vector<string> headers) { // TODO add where stuff, order by, etc..
         Table& table = this->database->getTable(tableName);
-        Table retTable(headers, "RESPONSE");
+        Table retTable(headers, {""}, "RESPONSE");
         vector<Row> dummyrows = {Row(headers)};
 
         for (int i = 1; i < table.getTableData().size(); i++) {
@@ -60,17 +80,13 @@ public:
     Update(Database& database) : CRUDCONNECTION(&database) {}
 
     void addRow(string tableName, vector<string> row) {
-        if (row.size() > this->database->getTable(tableName).getTableData()[0].getRowData().size()) {
-            while(row.size() > this->database->getTable(tableName).getTableData()[0].getRowData().size()) {
-                row.pop_back();
+        if (row.size() == this->database->getTable(tableName).getTableData()[0].getRowData().size()) {
+            if (this->database->getTable(tableName).verifyDataTypes(Row(row))) {
+                this->database->getTable(tableName).getTableData().push_back(Row(row));
             }
-        } else if (row.size() < this->database->getTable(tableName).getTableData()[0].getRowData().size()) {
-            while(row.size() < this->database->getTable(tableName).getTableData()[0].getRowData().size()) {
-                row.push_back("NULL");
-            }
+        } else {
+            cout << "WRONG DIMENSION OR WRONG TYPES";
         }
-
-        this->database->getTable(tableName).getTableData().push_back(Row(row));
     }
 };
 

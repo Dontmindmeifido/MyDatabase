@@ -10,7 +10,18 @@
 #include "imgui/misc/cpp/imgui_stdlib.h"
 #include "Compiler.cpp"
 
-std::string queryBuffer = "CREATE (FIRST_NAME, LAST_NAME, BIRTHDATE) in MODEL_EMPLOYEES;\nREAD (SURNAME) in EMPLOYEES";
+string strip(string value) {
+    string dummy = "";
+    for (auto x: value) {
+        if (x != ' ' && x != '\n') {
+            dummy += x;
+        }
+    }
+
+    return dummy;
+}
+
+std::string queryBuffer = "CREATE (FIRST_NAME, LAST_NAME, BIRTHDATE) in MODEL_EMPLOYEES;\nADDROW (John, Cena, 12-12-1999) in MODEL_EMPLOYEES;\nDELROW (1) in MODEL_EMPLOYEES;\nREAD (SURNAME) in EMPLOYEES;";
 int idx = -1;
 
 Lexer& lexer = *(new Lexer());
@@ -41,6 +52,7 @@ void DatabaseWindow() {
     if (idx != -1) {
         ImVec2 cursor = ImGui::GetCursorScreenPos();
         Table& table = db.getDatabaseData()[idx];
+        ImGui::Dummy(ImVec2(0, 20 * (int(table.getTableData().size()))));
         int w = (ImGui::GetIO().DisplaySize.x * 0.5 - 38) / min(10, int(table.getTableData()[0].getRowData().size())); // Soft limit on 10 visible cols
         ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(cursor.x, cursor.y), ImVec2(cursor.x + 20 - 1, cursor.y + 20 - 1), IM_COL32(30, 30, 30, 255));
         for (int j = 1; j < table.getTableData().size(); j++) {
@@ -57,10 +69,15 @@ void DatabaseWindow() {
             for (int j = 0; j < table.getTableData()[i].getRowData().size(); j++) {
                 string text = table.getTableData()[i].getRowData()[j].getValue();
                 ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(20 + cursor.x + w*j, cursor.y + 20*i), ImVec2(20 + cursor.x + w*(j + 1) - 1, cursor.y + 20*(i + 1) - 1), IM_COL32(30, 30, 30, 255));
+                if (ImGui::IsMouseHoveringRect(ImVec2(20 + cursor.x + w*j, cursor.y + 20*i), ImVec2(20 + cursor.x + w*(j + 1) - 1, cursor.y + 20*(i + 1) - 1))) {
+                    ImGui::BeginTooltip();
+                    ImGui::Text(&(table.getTableData()[i].getRowData()[j].getData()->getType()[0]));
+                    ImGui::Text(&(("ROW " + to_string(i) + " " + "COL " + to_string(j + 1))[0]));
+                    ImGui::EndTooltip();
+                }
                 ImGui::GetWindowDrawList()->AddText(ImVec2(20 + 5 + cursor.x + w*j, cursor.y + 20*i), IM_COL32(255, 255, 255, 255), &(text[0]), &(text[text.size()]));
             }
         }
-        //ImGui::Dummy(ImVec2(0, 100 + cursor.y + 25 * (table.getTableData().size() + 1)));
     }
 
     ImGui::End();
@@ -73,16 +90,37 @@ void EditorWindow(int buttonHeight = 30) {
     ImGui::SetNextWindowSize(ImVec2(screenSize.x * 0.5f, screenSize.y - 200));
 
     ImGui::PushStyleColor(ImGuiCol_TitleBgActive, ImGui::GetStyleColorVec4(ImGuiCol_TitleBg));
-    ImGui::Begin("Editor", NULL, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoResize);
+    ImGui::Begin("Editor", NULL, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize);
+
+
+    // WIPPPP! Very crude SYNTAX HIGHLIGHTER WIPPPP! ------------ BUG: DOES NOT HANDLE TABS!!
+    vector<string> wordList = lexer.getWords(queryBuffer);
+    for (int i = 0; i < wordList.size(); i++) {
+        if (retToLower(strip(wordList[i])) == "create") {
+            ImGui::GetWindowDrawList()->AddText(ImVec2(ImGui::GetCursorScreenPos().x + 3, ImGui::GetCursorScreenPos().y + 3), IM_COL32(50, 150, 200, 255), &(wordList[i][0]));
+        } else if (retToLower(strip(wordList[i])) == "addrow") {
+            ImGui::GetWindowDrawList()->AddText(ImVec2(ImGui::GetCursorScreenPos().x + 3, ImGui::GetCursorScreenPos().y + 3), IM_COL32(60, 200, 160, 255), &(wordList[i][0]));
+        } else if (retToLower(strip(wordList[i])) == "delrow") {
+            ImGui::GetWindowDrawList()->AddText(ImVec2(ImGui::GetCursorScreenPos().x + 3, ImGui::GetCursorScreenPos().y + 3), IM_COL32(200, 100, 50, 255), &(wordList[i][0]));
+        } else if (retToLower(strip(wordList[i])) == "read") {
+            ImGui::GetWindowDrawList()->AddText(ImVec2(ImGui::GetCursorScreenPos().x + 3, ImGui::GetCursorScreenPos().y + 3), IM_COL32(200, 200, 220, 255), &(wordList[i][0]));
+        } else if (retToLower(strip(wordList[i])) == "in") {
+            ImGui::GetWindowDrawList()->AddText(ImVec2(ImGui::GetCursorScreenPos().x + 3, ImGui::GetCursorScreenPos().y + 3), IM_COL32(150, 100, 100, 255), &(wordList[i][0]));
+        } else if (wordList[i] != "") {
+            ImGui::GetWindowDrawList()->AddText(ImVec2(ImGui::GetCursorScreenPos().x + 3, ImGui::GetCursorScreenPos().y + 3), IM_COL32(255, 255, 255, 255), &(wordList[i][0]));
+        }
+    }
 
     ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.8f, 0.8f, 0.8f, 0.0f)); // Transparent
     ImGui::InputTextMultiline(
         "##Editor", 
         &queryBuffer, // Add type hints
         ImVec2(-FLT_MIN, ImGui::GetWindowHeight() - 2.5 * buttonHeight), 
         ImGuiInputTextFlags_AllowTabInput | ImGuiInputTextFlags_CtrlEnterForNewLine
     );
-    ImGui::PopStyleColor(1);
+    ImGui::PopStyleColor(2);
+
 
     if (ImGui::Button("Compile Script", ImVec2(150, buttonHeight))) {
         std::cout << "\n[COMPILER INTERCEPT] Executing DFA on:\n";
@@ -121,6 +159,12 @@ void EditorResponse() {
             for (int j = 0; j < table.getTableData()[i].getRowData().size(); j++) {
                 string text = table.getTableData()[i].getRowData()[j].getValue();
                 ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(20 + cursor.x + 100*j, cursor.y + 20*i), ImVec2(20 + cursor.x + 100*(j + 1) - 1, cursor.y + 20*(i + 1) - 1), IM_COL32(30, 30, 30, 255));
+                if (ImGui::IsMouseHoveringRect(ImVec2(20 + cursor.x + 100*j, cursor.y + 20*i), ImVec2(20 + cursor.x + 100*(j + 1) - 1, cursor.y + 20*(i + 1) - 1))) {
+                    ImGui::BeginTooltip();
+                    ImGui::Text(&(table.getTableData()[i].getRowData()[j].getData()->getType()[0]));
+                    ImGui::Text(&(("ROW " + to_string(i) + " " + "COL " + to_string(j + 1))[0]));
+                    ImGui::EndTooltip();
+                }
                 ImGui::GetWindowDrawList()->AddText(ImVec2(20 + 5 + cursor.x + 100*j, cursor.y + 20*i), IM_COL32(255, 255, 255, 255), &(text[0]), &(text[text.size()]));
             }
         }
@@ -174,8 +218,8 @@ int main(int, char**) {
     Update* update = new Update(db);
     Delete* del = new Delete(db);
 
-    create->createTable("EMPLOYEES", vector<string> {"NAME", "SURNAME", "SALARY"});
-    create->createTable("HR", vector<string> {"NAME", "SURNAME", "SALARY", "HEIGHT"});
+    create->createTable("EMPLOYEES", vector<string> {"NAME:VARCHAR", "SURNAME:VARCHAR", "SALARY:NUMBER"});
+    create->createTable("HR", vector<string> {"NAME:VARCHAR", "SURNAME:VARCHAR", "SALARY:NUMBER", "HEIGHT:VARCHAR"});
     update->addRow("EMPLOYEES", vector<string> {"John", "Doe", "300"});
     update->addRow("EMPLOYEES", vector<string> {"John", "Tyrell", "500"});
     update->addRow("EMPLOYEES", vector<string> {"Park", "Lee", "257"});
