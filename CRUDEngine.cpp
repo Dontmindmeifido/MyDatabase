@@ -12,14 +12,22 @@ public:
     CRUDCONNECTION(Database* database) {
         this->database = database;
     }
+
+    Database* getConnection() {
+        return this->database;
+    }
+
+    virtual ~CRUDCONNECTION() {
+        delete database;
+    }
 };
 
-class Create : CRUDCONNECTION {
+class Create : virtual public CRUDCONNECTION {
 public:
-    Create(Database& database) : CRUDCONNECTION(&database)  {}
+    Create(Database* database) : CRUDCONNECTION(database)  {}
 
     void createTable(string tableName, vector<string> header) {
-        if (this->database->getTable(tableName).getTableName() == "NULL_TABLE") {
+        if (&(this->database->getTable(tableName)) == this->database->getNullTable()) {
             vector<string> headers;
             vector<string> datatypes;
 
@@ -27,6 +35,7 @@ public:
                 bool side = true;
                 headers.push_back("");
                 datatypes.push_back("");
+                
                 for (auto x: header[i]) {
                     if (x == ':') {
                         side = false;
@@ -47,73 +56,54 @@ public:
     }
 };
 
-class Read : CRUDCONNECTION {
+class Read : virtual public CRUDCONNECTION {
 public:
-    Read(Database& database) : CRUDCONNECTION(&database) {}
+    Read(Database* database) : CRUDCONNECTION(database) {}
 
-    Table readTable(string tableName, vector<string> headers, string where, string orderby) { // TODO add where stuff, order by, etc..
+    Table readTable(string tableName, vector<string> headers, vector<string> where, vector<string> orderby) { // TODO add where stuff, order by, etc..
         Table& table = this->database->getTable(tableName);
+
         Table retTable(headers, {""}, "RESPONSE");
         vector<Row> dummyrows = {Row(headers)};
+        
+        string column, operation, comparator, columnOrder, comparatorOrder;
+        int columnIndex, columnIndexOrder;
 
-        string column = "";
-        string operation = "";
-        string comparator = "";
+        if (!where.empty()) {
+            column = where[0];
+            operation = where[1];
+            comparator = where[2];
 
-        int k = 0;
-        for (auto x: where) {
-            if (x == ',') {
-                k += 1;
-                continue;
-            }
-
-            if (k == 0 && x != '(' && x != ')') {
-                column += x;
-            } else if (k == 1 && x != '(' && x != ')') {
-                operation += x;
-            } else if (k == 2 && x != '(' && x != ')') {
-                comparator += x;
+            columnIndex = 0;
+            for (int i = 0; i < table.getTableData()[0].getRowData().size(); i++) {
+                if (table.getTableData()[0].getRowData()[i].getValue() == column) {
+                    columnIndex = i;
+                }
             }
         }
 
-        int columnIndex = 0;
-        for (int i = 0; i < table.getTableData()[0].getRowData().size(); i++) {
-            if (table.getTableData()[0].getRowData()[i].getValue() == column) {
-                columnIndex = i;
+        if (!orderby.empty()) {
+            columnOrder = orderby[0];
+            comparatorOrder = orderby[1];
+
+            columnIndexOrder = 0;
+            for (int i = 0; i < headers.size(); i++) {
+                if (headers[i] == columnOrder) {
+                    columnIndexOrder = i;
+                }
             }
         }
 
-        string columnOrder = "";
-        string comparatorOrder = "";
-
-        k = 0;
-        for (auto x: orderby) {
-            if (x == ',') {
-                k += 1;
-                continue;
-            }
-
-            if (k == 0 && x != '(' && x != ')') {
-                columnOrder += x;
-            } else if (k == 1 && x != '(' && x != ')') {
-                comparatorOrder += x;
-            }
-        }
-        cout << columnOrder;
-
-        int columnIndexOrder = 0;
-        for (int i = 0; i < headers.size(); i++) {
-            if (headers[i] == columnOrder) {
-                columnIndexOrder = i;
-            }
-        }
+        cout << columnOrder << " " << comparatorOrder;
 
         for (int i = 1; i < table.getTableData().size(); i++) {
             int x = 0;
             vector<string> rowdata;
+
             for (int j = 0; j < table.getTableData()[i].getRowData().size(); j++) { // Direction concern
                 if (table.getTableData()[0].getRowData()[j].getValue() == headers[x]) {
                     if (!where.empty()) {
+
                         if (operation == ">") {
                             if (table.getTableData()[i].getRowData()[columnIndex].getValue() > comparator) {
                                 rowdata.push_back(table.getTableData()[i].getRowData()[j].getValue());
@@ -135,6 +125,7 @@ public:
                                 rowdata.push_back(table.getTableData()[i].getRowData()[j].getValue());
                             }
                         }
+
                     } else {
                         rowdata.push_back(table.getTableData()[i].getRowData()[j].getValue());
                     }
@@ -164,24 +155,24 @@ public:
     }
 };
 
-class Update : CRUDCONNECTION {
+class Update : virtual public CRUDCONNECTION {
 public:
-    Update(Database& database) : CRUDCONNECTION(&database) {}
+    Update(Database* database) : CRUDCONNECTION(database) {}
 
     void addRow(string tableName, vector<string> row) {
-        if (row.size() == this->database->getTable(tableName).getTableData()[0].getRowData().size()) {
-            if (this->database->getTable(tableName).verifyDataTypes(Row(row))) {
-                this->database->getTable(tableName).getTableData().push_back(Row(row));
+        if (&(this->database->getTable(tableName)) != this->database->getNullTable()) {
+            if (row.size() == this->database->getTable(tableName).getTableData()[0].getRowData().size()) {
+                if (this->database->getTable(tableName).verifyDataTypes(Row(row))) {
+                    this->database->getTable(tableName).getTableData().push_back(Row(row));
+                }
             }
-        } else {
-            cout << "WRONG DIMENSION OR WRONG TYPES";
         }
     }
 };
 
-class Delete : CRUDCONNECTION {
+class Delete : virtual public CRUDCONNECTION {
 public:
-    Delete(Database& database) : CRUDCONNECTION(&database) {}
+    Delete(Database* database) : CRUDCONNECTION(database) {}
 
     void deleteRow(string tableName) {
         if (this->database->getTable(tableName).getTableData().size() >= 2) {
@@ -206,3 +197,21 @@ public:
         }
     }
 };
+
+class CRUD: public Create, public Read, public Update, public Delete {
+    static CRUD* instance;
+
+    CRUD(Database* database): CRUDCONNECTION(database), Create(database), Read(database), Update(database), Delete(database) {}
+public:
+    static CRUD* getInstance(Database* database) {
+        if (!instance) instance = new CRUD(database);
+        return instance;
+    }
+
+    ~CRUD() {
+        delete getInstance(database);
+    }
+};
+
+CRUD* CRUD::instance = nullptr;
+

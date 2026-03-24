@@ -25,7 +25,7 @@ bool isNUMBER(char value) {
 
 bool isDATETIME(string value) {
     bool isDatetime = true;
-    vector<char> FORMAT = {'D', 'D', '-', 'M', 'M', '-', 'Y', 'Y', 'Y', 'Y'}; // This can be made even more modular by defining format classes
+    vector<char> FORMAT = {'D', 'D', '-', 'M', 'M', '-', 'Y', 'Y', 'Y', 'Y'};
 
     for (int i = 0; i < FORMAT.size(); i++) {
         switch(FORMAT[i]) {
@@ -49,11 +49,36 @@ bool isDATETIME(string value) {
     return isDatetime;
 }
 
+bool isDURATION(string value) {
+    bool isDuration = true;
+    vector<char> FORMAT = {'D', 'D', '-', 'M', 'M', '-', 'Y', 'Y'};
+
+    for (int i = 0; i < FORMAT.size(); i++) {
+        switch(FORMAT[i]) {
+            case 'D':
+                if (!isNUMBER(value[i])) isDuration = false;
+                break;
+            case 'M':
+                    if (!isNUMBER(value[i])) isDuration = false;
+                break;
+            case 'Y':
+                if (!isNUMBER(value[i])) isDuration = false;
+                break;
+            case '-':
+                if (value[i] != '-') {
+                    isDuration = false;
+                }
+                break;
+        }
+    }
+
+    return isDuration;
+}
+
 class DataType {
 protected:
     string value;
     string type;
-    // Make abstract class, operator override and pures
 
 public:
     string getValue() {
@@ -64,7 +89,6 @@ public:
         return this->type;
     }
 
-    //string operator+(string other) = 0;
     virtual ~DataType() {};
 };
 
@@ -86,7 +110,7 @@ public:
     }
 };
 
-class NUMBER: public DataType {
+class NUMBER: virtual public DataType {
 public: 
     NUMBER() {
         this->value = "0";
@@ -108,7 +132,7 @@ public:
     }
 };
 
-class DATETIME: public DataType {
+class DATETIME: virtual public DataType {
 public:
     DATETIME() {
         this->value = "01-01-1970";
@@ -130,6 +154,28 @@ public:
     }
 };
 
+class DURATION: public NUMBER, public DATETIME {
+public:
+    DURATION() {
+        this->value = "00-00-00";
+        this->type = "DURATION";
+    }
+
+    DURATION(string value) {
+        if (isDURATION(value)) {
+            this->value = value;
+            this->type = "DURATION";
+        } else {
+            cout << "ERROR WRONG DURATION TYPE";
+        }
+    }
+
+    DURATION(DURATION* obj) {
+        this->value = obj->getValue();
+        this->type = "DURATION";
+    }
+};
+
 class Cell {
     DataType* data;
 
@@ -145,6 +191,8 @@ public:
             this->data = new NUMBER(other.getData()->getValue());
         } else if (other.getData()->getType() == "DATETIME") {
             this->data = new DATETIME(other.getData()->getValue());
+        }  else if (other.getData()->getType() == "DURATION") {
+            this->data = new DURATION(other.getData()->getValue());
         }
     }
 
@@ -153,6 +201,8 @@ public:
             this->data = new DATETIME(value);
         } else if (isNUMBER(value)) {
             this->data = new NUMBER(value);
+        } else if (isDURATION(value)) {
+            this->data = new DURATION(value);
         } else {
             this->data = new VARCHAR(value);
         }
@@ -171,6 +221,8 @@ public:
             this->data = new NUMBER(other.getData()->getValue());
         } else if (other.getData()->getType() == "DATETIME") {
             this->data = new DATETIME(other.getData()->getValue());
+        }  else if (other.getData()->getType() == "DURATION") {
+            this->data = new DURATION(other.getData()->getValue());
         }
 
         return *this;
@@ -252,10 +304,17 @@ public:
 };
 
 class Database {
+    static Database* instance;
     vector<Table> databaseData; 
-    static Table& nullTbl;
+    static Table* nullTbl;
 
+    Database() {}
 public:
+    static Database* getInstance() {
+        if (!instance) instance = new Database();
+        return instance;
+    }
+
     Table& getTable(string name) {
         for (int i = 0; i < databaseData.size(); i++) {
             if (databaseData[i].getTableName() == name) {
@@ -264,20 +323,25 @@ public:
         }
 
         cout << "TABLE NOT FOUND";
-        return nullTbl;
+        return *nullTbl;
     }
 
     vector<Table>& getDatabaseData() {
         return this->databaseData;
     }
 
-    Table& getNullTable() {
+    Table* getNullTable() {
         return this->nullTbl;
     }
 
     void setDatabaseData(vector<Table> databaseData) {
         this->databaseData = databaseData;
     }
+
+    ~Database() {
+        delete getInstance();
+    }
 };
 
-Table& Database::nullTbl = *(new Table({"NULL_TABLE"}, {"NULL_TABLE"}, "NULL_TABLE"));
+Database* Database::instance = nullptr;
+Table* Database::nullTbl = new Table({"NULL_TABLE"}, {"NULL_TABLE"}, "NULL_TABLE");

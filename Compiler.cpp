@@ -23,219 +23,277 @@ SYNTAXER:
 
 */
 
-void toUpper(string& value) {
-    transform(value.begin(), value.end(), value.begin(), [](char x) {return toupper(x);});
-} 
-
-string retToLower(string value) {
-    transform(value.begin(), value.end(), value.begin(), [](char x) {return tolower(x);});
-    return value;
-} 
-
-void parseString(string& value) {
-    string tmp = "";
-    bool inside = false;
-
-    for (auto x: value) {
-        // Replace newline with space
-        if (x == '\n') {
-            tmp += " ";
-            continue;
-        }
-
-        // Check if inside parantheses
-        if (x == '(') {
-            inside = true;
-        } else if (x == ')') {
-            inside = false;
-        }
-
-        // Remove space inside parantheses
-        if (inside) {
-            if (x != ' ') {
-                tmp += x;
-            }
-        } else {
-            tmp += x;
-        }
-    }
-
-    value = tmp;
-}
-
-void removeIn(vector<string>& values) {
-    vector<string> dummy;
-
-    for (auto x: values) {
-        if (retToLower(x) != "in") { // Do lowercase
-            dummy.push_back(x);
-        }
-    }
-
-    values = dummy;
-}
-
 struct Query {
     string action;
     vector<string> source;
     string destination;
-    string where;
-    string orderby;
+    vector<string> where;
+    vector<string> orderby;
 
-    Table* nullTbl;
-    Create* create;
-    Read* read;
-    Update* update;
-    Delete* del;
+    CRUD* crud;
 
-    Query(Database& db) {
-        nullTbl = &(db.getNullTable());
-        create = new Create(db);
-        read = new Read(db);
-        update = new Update(db);
-        del = new Delete(db);
+    Query(Database* db) {
+        crud = CRUD::getInstance(db);
     }
 
     Table runQuery() {
-        if (action == "create") { // Syntax HNAME:DATATYPE.
-            create->createTable(destination, source);
-            return *(this->nullTbl);
+        if (action == "create") {
+            crud->createTable(destination, source);
+            return *(crud->getConnection()->getNullTable());
         } else if (action == "addrow") {
-            update->addRow(destination, source);
-            return *(this->nullTbl);
+            crud->addRow(destination, source);
+            return *(crud->getConnection()->getNullTable());
         } else if (action == "delrow") {
             if (source[0] == "") {
-                del->deleteRow(destination);
+                crud->deleteRow(destination);
             } else {
-                del->deleteRow(destination, stoi(source[0]));
+                crud->deleteRow(destination, stoi(source[0]));
             }
 
-            return *(this->nullTbl);
+            return *(crud->getConnection()->getNullTable());
         } else if (action == "read") {
-            return read->readTable(destination, source, where, orderby);
+            return crud->readTable(destination, source, where, orderby);
         }
     }
 };
 
-struct DFA {
+class DFA {
     vector<int> alphabet;
     vector<int> states;
     vector<int> transitions;
+    vector<char> alphabetMap; // includes % as last elements - everything else
     int currentState;
-
-    DFA() {}
 
     void UpdateState(int transition) {
         currentState = transitions[currentState * alphabet.size() + transition];
     }
 
-};
-
-class Lexer {
-    DFA dfa;
-
 public:
-    Lexer() {
-        dfa.states = vector<int>{0, 1};
-        dfa.alphabet = vector<int>{0, 1, 2};
-        dfa.transitions = vector<int>{0, 0, 1,  0, 0, 1};
+    DFA(vector<int> alphabet, vector<int> states, vector<int> transitions, vector<char> alphabetMap) {
+        this->alphabet = alphabet;
+        this->states = states;
+        this->transitions = transitions;
+        this->alphabetMap = alphabetMap;
+        this->currentState = 0;
     }
 
-    void runLexer(Database& database, string queries, vector<Table>& READRESPONSE) {
-        vector<vector<string>> wordList;
+    vector<int> runDFA(string value) {
+        vector<int> states;
 
-        parseString(queries);   
-        vector<string> temp = {""};
-        for (auto x: queries) {
-            if (x == ';') {
-                temp.push_back("");
-            } else {
-                temp[temp.size() - 1] += x;
+        for (auto chr: value) {
+            // Find in alphabetMap
+            int transitionIndex = alphabetMap.size() - 1;
+            for (int i = 0; i < alphabetMap.size() - 1; i++) {
+                if (chr == alphabetMap[i]) {
+                    transitionIndex = i;
+                    break;
+                }
+            }
+
+            this->UpdateState(transitionIndex);
+            states.push_back(currentState); // Starts from 1
+        }
+
+        return states;
+    }
+};
+
+class Parsing {
+public:
+    void toUpper(string& value) {
+        transform(value.begin(), value.end(), value.begin(), [](char x) {return toupper(x);});
+    } 
+
+    string retToLower(string value) {
+        transform(value.begin(), value.end(), value.begin(), [](char x) {return tolower(x);});
+        return value;
+    } 
+
+    string retStrip(string value) {
+        string dummy = "";
+        for (auto x: value) {
+            if (x != ' ' && x != '\n') {
+                dummy += x;
             }
         }
-        temp.pop_back();
 
-        for (int k = 0; k < temp.size(); k++) {
-            wordList.push_back({""});
-            for (int i = 0; i < temp[k].length(); i++) {
-                // State update
-                if (temp[k][i] == ' ') {
-                    dfa.UpdateState(0);
-                } else if (temp[k][i] == ';') {
-                    dfa.UpdateState(1);
-                } else {
-                    dfa.UpdateState(2);
+        return dummy;
+    }
+    
+    void removeSpaces(string& value) {
+        string tmp = "";
+        bool inside = false;
+
+        for (auto x: value) {
+            // Replace newline with space
+            if (x == '\n') {
+                tmp += " ";
+                continue;
+            }
+
+            // Check if inside parantheses
+            if (x == '(') {
+                inside = true;
+            } else if (x == ')') {
+                inside = false;
+            }
+
+            // Remove space inside parantheses
+            if (inside) {
+                if (x != ' ') {
+                    tmp += x;
+                }
+            } else {
+                tmp += x;
+            }
+        }
+
+        value = tmp;
+    }
+
+    void removeIn(vector<vector<string>>& values) {
+        vector<vector<string>> tempValues;
+
+        for (auto instruction: values) {
+            vector<string> dummy;
+
+            for (auto x: instruction) {
+                if (retToLower(x) != "in") {
+                    dummy.push_back(x);
+                }
+            }
+
+            tempValues.push_back(dummy);
+        }
+
+        values = tempValues;
+    }
+
+    vector<string> splitInstructions(string value) {
+        vector<string> instructions = {""};
+        for (auto x: value) {
+            if (x == ';') {
+                instructions.push_back("");
+            } else {
+                instructions[instructions.size() - 1] += x;
+            }
+        }
+        instructions.pop_back();
+
+        return instructions;
+    }
+
+    vector<string> splitArgument(string value) {
+        vector<string> dummy = {""};
+
+        for (int j = 0; j < value.length(); j++) {
+            if (value[j] == ',' && dummy[dummy.size() - 1] != "") {
+                dummy.push_back("");
+            } else if (value[j] != '(' && value[j] != ')') {
+                dummy[dummy.size() - 1] += value[j];
+            }
+        }
+
+        return dummy;
+    }
+
+    vector<string> tokenizeArgument(string value) {
+        vector<string> tokens;
+
+        int k = 0;
+        for (auto x: value) {
+            if (x == ',') {
+                k += 1;
+                continue;
+            }
+
+            if (k == 0 && x != '(' && x != ')') {
+                if (tokens.size() == 0) {
+                    tokens.push_back("");
                 }
 
-                // Collect/Append char based on state
-                if (dfa.currentState == 0 && wordList[wordList.size() - 1][wordList[wordList.size() - 1].size() - 1] != "") {
-                    wordList[wordList.size() - 1].push_back("");
-                } else if (dfa.currentState == 1) {
-                    wordList[wordList.size() - 1][wordList[wordList.size() - 1].size() - 1] += temp[k][i];
+                tokens[0] += x;
+            } else if (k == 1 && x != '(' && x != ')') {
+                if (tokens.size() == 1) {
+                    tokens.push_back("");
+                }
+
+                tokens[1] += x;
+            } else if (k == 2 && x != '(' && x != ')') {
+                if (tokens.size() == 2) {
+                    tokens.push_back("");
+                }
+                
+                tokens[2] += x;
+            }
+        }
+
+        return tokens;
+    }
+
+    vector<string> partitionQuery(string value) {
+        vector<string> dummy = {""};
+
+        for (auto x: value) {
+            if ((x == ' ' || x == '\n') && dummy[dummy.size() - 1] != "") {
+                dummy.push_back("");
+            }
+
+            dummy[dummy.size() - 1] += x;
+        }
+
+        return dummy;
+    }
+};
+
+class Lexer: public Parsing {
+    static Lexer* instance;
+    DFA dfaTokenizer;
+
+    Lexer(): 
+    dfaTokenizer(vector<int>{0, 1, 2}, vector<int>{0, 1}, vector<int>{0, 0, 1,  0, 0, 1}, vector<char> {' ', ';', '%'}) {}
+
+public:
+    static Lexer* getInstance() {
+        if (!instance) instance = new Lexer();
+        return instance;
+    }
+
+    vector<vector<string>> runLexer(string queries) {
+        vector<vector<string>> wordList;
+
+        removeSpaces(queries);   
+        
+        vector<string> instructions = splitInstructions(queries);
+        for (int k = 0; k < instructions.size(); k++) {
+            vector<int> state = dfaTokenizer.runDFA(instructions[k]);
+
+            wordList.push_back({""});
+            for (int i = 0; i < instructions[k].length(); i++) {
+                int lastInstruction = wordList.size() - 1;
+                int lastToken = wordList[lastInstruction].size() - 1;
+
+                // Collect char based on state
+                if (state[i] == 0 && wordList[lastInstruction][lastToken] != "") {
+                    wordList[lastInstruction].push_back("");
+                } else if (state[i] == 1) {
+                    wordList[lastInstruction][lastToken] += instructions[k][i];
                 }
 
                 // EDGE CASE: last word
-                if (i == queries.length() - 1 && wordList[wordList.size() - 1][wordList[wordList.size() - 1].size() - 1] == "") {
-                    wordList[wordList.size() - 1].pop_back();
+                if (i == instructions[k].length() - 1 && wordList[lastInstruction][lastToken] == "") {
+                    wordList[lastInstruction].pop_back();
                 }
             }
         }
 
-        vector<Query> queriesVec;
-        Query dummy(database);
-        for (auto& x: wordList) {
-            removeIn(x);
-        }
+        removeIn(wordList);
 
-        // Build queries and verify legality, run
-        for (int k = 0; k < wordList.size(); k++) {
-            dummy.action = retToLower(wordList[k][0]);
-            dummy.destination = wordList[k][2];
-
-            vector<string> dummytemp = {""};
-            for (int j = 0; j < wordList[k][1].length(); j++) {
-                if (wordList[k][1][j] == ',' && dummytemp[dummytemp.size() - 1] != "") {
-                    dummytemp.push_back("");
-                } else if (wordList[k][1][j] != '(' && wordList[k][1][j] != ')') {
-                    dummytemp[dummytemp.size() - 1] += wordList[k][1][j];
-                }
-            }
-            dummy.source = dummytemp;
-
-            if (wordList[k].size() >= 4 && retToLower(dummy.action) == "read") {
-                int m = wordList[k].size() - 3;
-                while (m) {
-                    if (retToLower(wordList[k][2 + m - 1]) == "where") {
-                        dummy.where = wordList[k][2 + m];
-                        m -= 2;
-                    } else if (retToLower(wordList[k][2 + m - 1]) == "orderby") {
-                        dummy.orderby = wordList[k][2 + m];
-                        m -= 2;
-                    }
-                }
-            }
-
-            queriesVec.push_back(dummy);
-        }
-
-        for (auto x: queriesVec) {
-            cout << x.action;
-            if (x.runQuery().getTableName() != "NULL_TABLE") {
-                READRESPONSE.push_back(x.runQuery());
-            }
-        }
+        return wordList;
     }
 
     vector<string> getWords(string queries) {
-        vector<string> wordList = {""};
-
-        for (auto x: queries) {
-            if ((x == ' ' || x == '\n') && wordList[wordList.size() - 1] != "") {
-                wordList.push_back("");
-            }
-
-            wordList[wordList.size() - 1] += x;
-        }
+        vector<string> wordList = partitionQuery(queries);
 
         string sum = "";
         for (int i = 0; i < wordList.size(); i++) {
@@ -251,7 +309,89 @@ public:
             wordList[i] = orgsum + wordList[i];
         }
 
-        // Ok so basically this is decent, but do calculate the colors here based on what the word is and stuff;
         return wordList;
     }
+
+    vector<string> getSnippet(string lastWord, Database& db) {
+        vector<string> checks = {"CREATE", "ADDROW", "DELROW", "READ", "WHERE", "ORDERBY"};
+        for (auto x: db.getDatabaseData()) {
+            checks.push_back(x.getTableName());
+            for (auto y: x.getTableData()[0].getRowData()) {
+                checks.push_back(y.getValue() + ":" + x.getTableName());
+            }
+        }
+
+        vector<string> ret;
+        if (lastWord == "") {
+            return ret;
+        }
+
+        if (lastWord[0] == '(') {
+            lastWord = lastWord.substr(1, -1);
+        }
+
+        for (auto word: checks) {
+            if ( retToLower(word.substr(0, min(int(word.length()), int(lastWord.length())))) == retToLower(lastWord.substr(0, min(int(word.length()), int(lastWord.length())))) ) {
+                ret.push_back(word);
+            }
+        }
+
+        return ret;
+    }
+
+    ~Lexer() {
+        delete getInstance();
+    }
 };
+
+class Compiler {
+    static Compiler* instance;
+
+    Compiler() {}
+
+public:
+    static Compiler* getInstance() {
+        if (!instance) instance = new Compiler();
+        return instance;
+    }
+
+    void runCompiler(string queries, Database* database, vector<Table>* READRESPONSE) {
+        Lexer* lexer = Lexer::getInstance();
+        vector<vector<string>> wordList = lexer->runLexer(queries);
+        
+        vector<Query> queriesVec;
+        Query dummy(database);
+
+        // Build queries
+        for (int k = 0; k < wordList.size(); k++) {
+            dummy.action = lexer->retToLower(wordList[k][0]);
+            dummy.destination = wordList[k][2];
+            dummy.source = lexer->splitArgument(wordList[k][1]);
+
+            if (wordList[k].size() >= 4 && lexer->retToLower(dummy.action) == "read") {
+                for (int j = 3; j < wordList[k].size(); j += 2) {
+                    if (lexer->retToLower(wordList[k][j]) == "where") {
+                        dummy.where = lexer->tokenizeArgument(wordList[k][j + 1]);
+                    } else if (lexer->retToLower(wordList[k][j]) == "orderby") {
+                        dummy.orderby = lexer->tokenizeArgument(wordList[k][j + 1]);
+                    }
+                }
+            }
+
+            queriesVec.push_back(dummy);
+        }
+
+        for (auto x: queriesVec) {
+            if (x.runQuery().getTableName() != database->getNullTable()->getTableName()) {
+                READRESPONSE->push_back(x.runQuery());
+            }
+        }
+    }
+
+    ~Compiler() {
+        delete getInstance();
+    }
+};
+
+Lexer* Lexer::instance = nullptr;
+Compiler* Compiler::instance = nullptr;
