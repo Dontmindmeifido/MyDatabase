@@ -1,10 +1,10 @@
-#include "Interface.cpp"
+#include "05Interface.cpp"
 
 int main() {
     Lexer* lexer = Lexer::getInstance();
     Compiler* compiler = Compiler::getInstance();
     Database* db = Database::getInstance();
-    CRUD* crud = CRUD::getInstance(db);
+    Crud* crud = Crud::getInstance();
 
     crud->createTable("EMPLOYEES", vector<string> {"NAME:VARCHAR", "SURNAME:VARCHAR", "SALARY:NUMBER"});
     crud->createTable("HR", vector<string> {"NAME:VARCHAR", "SURNAME:VARCHAR", "SALARY:NUMBER", "HEIGHT:VARCHAR"});
