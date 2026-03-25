@@ -1,9 +1,6 @@
-#include <iostream>
-#include <vector>
+#include "00Database.h"
 
-using namespace std;
-
-bool isNUMBER(string value) {
+bool isNUMBER(std::string value) {
     bool isNumber = true;
     for (auto x: value) {
         if (!(char(x) >= 48 && char(x) <= 57)) {
@@ -23,9 +20,9 @@ bool isNUMBER(char value) {
     return isNumber;
 }
 
-bool isDATETIME(string value) {
+bool isDATETIME(std::string value) {
     bool isDatetime = true;
-    vector<char> FORMAT = {'D', 'D', '-', 'M', 'M', '-', 'Y', 'Y', 'Y', 'Y'};
+    std::vector<char> FORMAT = {'D', 'D', '-', 'M', 'M', '-', 'Y', 'Y', 'Y', 'Y'};
 
     for (int i = 0; i < FORMAT.size(); i++) {
         switch(FORMAT[i]) {
@@ -49,254 +46,231 @@ bool isDATETIME(string value) {
     return isDatetime;
 }
 
-class DataType {
-protected:
-    string value;
-    string type;
 
-public:
-    string getValue() const {
-        return this->value;
-    }
+std::string DataType::getValue() const {
+    return this->value;
+}
 
-    string getType() const {
-        return this->type;
-    }
+std::string DataType::getType() const {
+    return this->type;
+}
 
-    virtual ~DataType() {};
-};
 
-class VARCHAR: public DataType {
-public:
-    VARCHAR() {
-        this->value = "";
-        this->type = "VARCHAR";
-    }
+VARCHAR::VARCHAR() {
+    this->value = "";
+    this->type = "VARCHAR";
+}
 
-    VARCHAR(string value) {
+VARCHAR::VARCHAR(std::string value) {
+    this->value = value;
+    this->type = "VARCHAR";
+}
+
+VARCHAR::VARCHAR(VARCHAR* obj) {
+    this->value = obj->getValue();
+    this->type = "VARCHAR";
+}
+
+VARCHAR* VARCHAR::clone() const {
+    return new VARCHAR(this->getValue());
+}
+
+
+NUMBER::NUMBER() {
+    this->value = "0";
+    this->type = "NUMBER";
+}
+
+NUMBER::NUMBER(std::string value) {
+    if (isNUMBER(value)) {
         this->value = value;
-        this->type = "VARCHAR";
-    }
-
-    VARCHAR(VARCHAR* obj) {
-        this->value = obj->getValue();
-        this->type = "VARCHAR";
-    }
-};
-
-class NUMBER: public DataType {
-public: 
-    NUMBER() {
-        this->value = "0";
         this->type = "NUMBER";
+    } else {
+        std::cout << "ERROR WRONG NUMBER TYPE";
     }
+}
 
-    NUMBER(string value) {
-        if (isNUMBER(value)) {
-            this->value = value;
-            this->type = "NUMBER";
-        } else {
-            cout << "ERROR WRONG NUMBER TYPE";
-        }
-    }
+NUMBER::NUMBER(NUMBER* obj) {
+    this->value = obj->getValue();
+    this->type = "NUMBER";
+}
 
-    NUMBER(NUMBER* obj) {
-        this->value = obj->getValue();
-        this->type = "NUMBER";
-    }
-};
+NUMBER* NUMBER::clone() const {
+    return new NUMBER(this->getValue());
+}
 
-class DATETIME: public DataType {
-public:
-    DATETIME() {
-        this->value = "01-01-1970";
+
+DATETIME::DATETIME() {
+    this->value = "01-01-1970";
+    this->type = "DATETIME";
+}
+
+DATETIME::DATETIME(std::string value) {
+    if (isDATETIME(value)) {
+        this->value = value;
         this->type = "DATETIME";
+    } else {
+        std::cout << "ERROR WRONG DATETIME TYPE";
     }
+}
 
-    DATETIME(string value) {
-        if (isDATETIME(value)) {
-            this->value = value;
-            this->type = "DATETIME";
-        } else {
-            cout << "ERROR WRONG DATETIME TYPE";
-        }
+DATETIME::DATETIME(DATETIME* obj) {
+    this->value = obj->getValue();
+    this->type = "DATETIME";
+}
+
+DATETIME* DATETIME::clone() const {
+    return new DATETIME(this->getValue());
+}
+
+
+Cell::Cell() {
+    this->data = new VARCHAR();
+}
+
+Cell::Cell(const Cell& other) {
+    this->data = other.getData()->clone();
+}
+
+Cell::Cell(std::string value) {
+    if (isDATETIME(value)) {
+        this->data = new DATETIME(value);
+    } else if (isNUMBER(value)) {
+        this->data = new NUMBER(value);
+    } else {
+        this->data = new VARCHAR(value);
     }
+}
 
-    DATETIME(DATETIME* obj) {
-        this->value = obj->getValue();
-        this->type = "DATETIME";
-    }
-};
+Cell::~Cell() {
+    delete this->data;
+}
 
-class Cell {
-    DataType* data;
-
-public:
-    Cell() {
-        this->data = new VARCHAR();
-    }
-
-    Cell(const Cell& other) {
-        if (other.getDataType() == "VARCHAR") {
-            this->data = new VARCHAR(other.getValue());
-        } else if (other.getDataType() == "NUMBER") {
-            this->data = new NUMBER(other.getValue());
-        } else if (other.getDataType() == "DATETIME") {
-            this->data = new DATETIME(other.getValue());
-        }
-    }
-
-    Cell(string value) {
-        if (isDATETIME(value)) {
-            this->data = new DATETIME(value);
-        } else if (isNUMBER(value)) {
-            this->data = new NUMBER(value);
-        } else {
-            this->data = new VARCHAR(value);
-        }
-    }
-
-    Cell& operator=(const Cell& other) {
-        if (&other == this) {
-            return *this;
-        }
-
-        delete this->data;
-
-        if (other.getDataType() == "VARCHAR") {
-            this->data = new VARCHAR(other.getValue());
-        } else if (other.getDataType() == "NUMBER") {
-            this->data = new NUMBER(other.getValue());
-        } else if (other.getDataType() == "DATETIME") {
-            this->data = new DATETIME(other.getValue());
-        }
-
+Cell& Cell::operator=(const Cell& other) {
+    if (&other == this) {
         return *this;
     }
 
-    string getValue() const {
-        return this->data->getValue();
+    delete this->data;
+
+    if (other.getDataType() == "VARCHAR") {
+        this->data = new VARCHAR(other.getValue());
+    } else if (other.getDataType() == "NUMBER") {
+        this->data = new NUMBER(other.getValue());
+    } else if (other.getDataType() == "DATETIME") {
+        this->data = new DATETIME(other.getValue());
     }
 
-    string getDataType() const {
-        return this->data->getType();
+    return *this;
+}
+
+std::string Cell::getValue() const {
+    return this->data->getValue();
+}
+
+std::string Cell::getDataType() const {
+    return this->data->getType();
+}
+
+DataType* Cell::getData() const {
+    return this->data;
+}
+
+
+Row::Row(std::vector<std::string> rowData) {
+    std::vector<Cell> auxRowData;
+
+    for (auto x: rowData) {
+        auxRowData.push_back(Cell(x));
     }
 
-    ~Cell() {
-        delete this->data;
-    }
-};
+    this->rowData = auxRowData;
+}
 
-class Row {
-    vector<Cell> rowData;
+std::vector<Cell> Row::getRowData() const {
+    return this->rowData;
+}
 
-public:
-    Row(vector<string> rowData) {
-        vector<Cell> auxRowData;
+void Row::setRowData(std::vector<Cell> rowData) {
+    this->rowData = rowData;
+}
 
-        for (auto x: rowData) {
-            auxRowData.push_back(Cell(x));
-        }
 
-        this->rowData = auxRowData;
-    }
-
-    vector<Cell> getRowData() const {
-        return this->rowData;
-    }
-
-    void setRowData(vector<Cell> rowData) {
-        this->rowData = rowData;
-    }
-};
-
-class Table {
-    vector<Row> tableData;
-    vector<string> tableDataTypes;
-    string tableName;
-
-    bool verifyDataTypes(const vector<Row>& tableData) {
-        if (tableDataTypes[0] == "ANY") { // Escape ANY type
-            return true;
-        }
-
-        for (int i = 1; i < tableData.size(); i++) {
-            for (int j = 0; j < tableData[i].getRowData().size(); j++) {
-                if (tableDataTypes[j] != tableData[i].getRowData()[j].getDataType())
-                return false;
-            }
-        }
-
+bool Table::verifyDataTypes(const std::vector<Row>& tableData) {
+    if (tableDataTypes[0] == "ANY") { // Escape ANY type
         return true;
     }
 
-    bool verifyColumnSize(const vector<Row>& tableData) {
-        for (int i = 1; i < tableData.size(); i++) {
-            if (tableData[0].getRowData().size() != tableData[i].getRowData().size()) 
+    for (int i = 1; i < tableData.size(); i++) {
+        for (int j = 0; j < tableData[i].getRowData().size(); j++) {
+            if (tableDataTypes[j] != tableData[i].getRowData()[j].getDataType())
             return false;
-
-        }
-
-        return true;
-    }
-
-public:
-    Table(vector<string> header, vector<string> datatypes, string tableName) {
-        this->tableData.push_back(Row(header));
-        this->tableDataTypes = datatypes;
-        this->tableName = tableName;
-    }
-
-    vector<Row> getTableData() {
-        return this->tableData;
-    }
-
-    void setTableData(vector<Row> tableData) {
-        bool validType = verifyDataTypes(tableData);
-        bool validColumns = verifyColumnSize(tableData);
-
-        if (validType && validColumns) {
-            this->tableData = tableData;
-        } else {
-            cout << "INVALID WTF";
         }
     }
 
-    string getTableName() {
-        return this->tableName;
-    }
-};
+    return true;
+}
 
-class Database {
-    static Database* instance;
-    vector<Table> databaseData; 
+bool Table::verifyColumnSize(const std::vector<Row>& tableData) {
+    for (int i = 1; i < tableData.size(); i++) {
+        if (tableData[0].getRowData().size() != tableData[i].getRowData().size()) 
+        return false;
 
-    Database() {}
-
-public:
-    static Database* getInstance() {
-        if (!instance) instance = new Database();
-        return instance;
     }
 
-    Table* getTable(string name) {
-        for (int i = 0; i < databaseData.size(); i++) {
-            if (databaseData[i].getTableName() == name) {
-                return &databaseData[i];
-            }
+    return true;
+}
+
+Table::Table(std::vector<std::string> header, std::vector<std::string> datatypes, std::string tableName) {
+    this->tableData.push_back(Row(header));
+    this->tableDataTypes = datatypes;
+    this->tableName = tableName;
+}
+
+std::vector<Row> Table::getTableData() {
+    return this->tableData;
+}
+
+void Table::setTableData(std::vector<Row> tableData) {
+    bool validType = verifyDataTypes(tableData);
+    bool validColumns = verifyColumnSize(tableData);
+
+    if (validType && validColumns) {
+        this->tableData = tableData;
+    } else {
+        std::cout << "INVALID WTF";
+    }
+}
+
+std::string Table::getTableName() {
+    return this->tableName;
+}
+
+
+Database::Database() {}
+
+Database* Database::getInstance() {
+    if (!instance) instance = new Database();
+    return instance;
+}
+
+Table* Database::getTable(std::string name) {
+    for (int i = 0; i < databaseData.size(); i++) {
+        if (databaseData[i].getTableName() == name) {
+            return &databaseData[i];
         }
-
-        cout << "TABLE NOT FOUND";
-        return nullptr;
     }
 
-    vector<Table> getDatabaseData() {
-        return this->databaseData;
-    }
+    std::cout << "TABLE NOT FOUND";
+    return nullptr;
+}
 
-    void setDatabaseData(vector<Table> databaseData) {
-        this->databaseData = databaseData;
-    }
-};
+std::vector<Table> Database::getDatabaseData() {
+    return this->databaseData;
+}
+
+void Database::setDatabaseData(std::vector<Table> databaseData) {
+    this->databaseData = databaseData;
+}   
 
 Database* Database::instance = nullptr;
