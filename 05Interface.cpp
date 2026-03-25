@@ -31,16 +31,14 @@ protected:
 
 class Interface : Util {   
     static Interface* instance;
-    
-    Lexer* lexer;
-    Compiler* compiler;
-    Database* db;
 
     std::string queryBuffer{"CREATE (FIRST_NAME: VARCHAR, LAST_NAME: VARCHAR, BIRTHDATE: DATETIME) in MODEL_EMPLOYEES;\nADDROW (John, Cena, 12-12-1999) in MODEL_EMPLOYEES;\nDELROW (1) in MODEL_EMPLOYEES;\nREAD (SURNAME) in EMPLOYEES;"};
-    vector<Table>* READRESPONSE;
-    int idx{-1};
+    vector<Table*>* READRESPONSE;
+    int selectedTable{-1};
 
     void DatabaseWindow() {
+        Database* db = Database::getInstance();
+
         ImVec2 screenSize = ImGui::GetIO().DisplaySize;
 
         ImGui::SetNextWindowPos(ImVec2(0, 0));
@@ -52,8 +50,8 @@ class Interface : Util {
         if (ImGui::BeginMenuBar()) {
             for (int i = 0; i < db->getDatabaseData().size(); i++) {
                 if (ImGui::MenuItem(&(db->getDatabaseData()[i].getTableName()[0]))) {
-                    if (idx != i) {
-                        idx = i;
+                    if (selectedTable != i) {
+                        selectedTable = i;
                     }
                 }
             }
@@ -61,9 +59,9 @@ class Interface : Util {
         }
 
         // Print table IDEA HERE: ADD TYPING SUGGESTIONS LIKE SYNTAX OR TABLE_NAME Suggestsions
-        if (idx != -1) {
+        if (selectedTable != -1) {
             ImVec2 cursor = ImGui::GetCursorScreenPos();
-            Table& table = db->getDatabaseData()[idx];
+            Table& table = db->getDatabaseData()[selectedTable];
             ImGui::Dummy(ImVec2(0, 20 * (int(table.getTableData().size()))));
             int w = (ImGui::GetIO().DisplaySize.x * 0.5 - 38) / min(10, int(table.getTableData()[0].getRowData().size())); // Soft limit on 10 visible cols
             ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(cursor.x, cursor.y), ImVec2(cursor.x + 20 - 1, cursor.y + 20 - 1), IM_COL32(30, 30, 30, 255));
@@ -97,6 +95,10 @@ class Interface : Util {
     }
 
     void EditorWindow(int buttonHeight = 30) {
+        Lexer* lexer = Lexer::getInstance();
+        Database* db = Database::getInstance();
+        Compiler* compiler = Compiler::getInstance();
+
         ImVec2 screenSize = ImGui::GetIO().DisplaySize;
         ImGui::SetNextWindowPos(ImVec2(screenSize.x * 0.5f, 0));
         ImGui::SetNextWindowSize(ImVec2(screenSize.x * 0.5f, screenSize.y - 200));
@@ -157,8 +159,12 @@ class Interface : Util {
             std::cout << "\nExecuting DFA on:\n";
             std::cout << queryBuffer << "\n";
 
+            for (auto table: *READRESPONSE) {
+                delete table; // Memory leak solve in query when creating the return table
+            }
             READRESPONSE->clear();
-            compiler->runCompiler(queryBuffer, db, READRESPONSE);
+
+            compiler->runCompiler(queryBuffer, READRESPONSE);
         }
 
         ImGui::End();
@@ -175,7 +181,7 @@ class Interface : Util {
 
         if (READRESPONSE->size() != 0) {
             ImVec2 cursor = ImGui::GetCursorScreenPos();
-            Table& table = (*READRESPONSE)[0];
+            Table& table = *((*READRESPONSE)[0]);
             int w = (ImGui::GetIO().DisplaySize.x * 0.5 - 38) / min(10, int(table.getTableData()[0].getRowData().size())); // Soft limit on 10 visible cols
             ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(cursor.x, cursor.y), ImVec2(cursor.x + 20 - 1, cursor.y + 20 - 1), IM_COL32(30, 30, 30, 255));
             for (int j = 1; j < table.getTableData().size(); j++) {
@@ -208,16 +214,13 @@ class Interface : Util {
         ImGui::PopStyleColor(1);
     }
 
-    Interface(Database* db, Lexer* lexer, Compiler* compiler) {
-        this->lexer = lexer;
-        this->compiler = compiler;
-        this->READRESPONSE = READRESPONSE = new vector<Table>;
-        this->db = db;
+    Interface() {
+        this->READRESPONSE = new vector<Table*>;
     }
 
 public:
-    static Interface* getInstance(Database* db, Lexer* lexer, Compiler* compiler) {
-        if (!instance) instance = new Interface(db, lexer, compiler);
+    static Interface* getInstance() {
+        if (!instance) instance = new Interface();
         return instance;
     }
 

@@ -7,17 +7,19 @@ struct Query {
     vector<string> where;
     vector<string> orderby;
 
-    Query() { }
+    Query() {}
 
-    Table runQuery() {
+    Table* runQuery() {
         Crud* crud = Crud::getInstance();
 
         if (action == "create") {
             crud->createTable(destination, source);
-            return *(crud->getConnection()->getNullTable());
+
+            return nullptr;
         } else if (action == "addrow") {
             crud->addRow(destination, source);
-            return *(crud->getConnection()->getNullTable());
+
+            return nullptr;
         } else if (action == "delrow") {
             if (source[0] == "") {
                 crud->deleteRow(destination);
@@ -25,9 +27,11 @@ struct Query {
                 crud->deleteRow(destination, stoi(source[0]));
             }
 
-            return *(crud->getConnection()->getNullTable());
+            return nullptr;
         } else if (action == "read") {
             return crud->readTable(destination, source, where, orderby);
         }
+
+        delete this;
     }
 };

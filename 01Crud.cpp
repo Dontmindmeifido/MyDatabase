@@ -26,7 +26,7 @@ public:
 class Create : virtual public Connection {
 public:
     void createTable(string tableName, vector<string> header) {
-        if (&(this->database->getTable(tableName)) == this->database->getNullTable()) {
+        if (this->database->getTable(tableName) == nullptr) {
             vector<string> headers;
             vector<string> datatypes;
 
@@ -57,75 +57,18 @@ public:
 
 class Read : virtual public Connection {
 public:
-    Table readTable(string tableName, vector<string> headers, vector<string> where, vector<string> orderby) { // TODO add where stuff, order by, etc..
-        Table& table = this->database->getTable(tableName);
+    Table* readTable(string tableName, vector<string> headers, vector<string> where, vector<string> orderby) { // TODO add where stuff, order by, etc..
+        Table* table = this->database->getTable(tableName);
 
-        Table retTable(headers, {""}, "RESPONSE");
+        // Get columns
         vector<Row> dummyrows = {Row(headers)};
-        
-        string column, operation, comparator, columnOrder, comparatorOrder;
-        int columnIndex, columnIndexOrder;
-
-        if (!where.empty()) {
-            column = where[0];
-            operation = where[1];
-            comparator = where[2];
-
-            columnIndex = 0;
-            for (int i = 0; i < table.getTableData()[0].getRowData().size(); i++) {
-                if (table.getTableData()[0].getRowData()[i].getValue() == column) {
-                    columnIndex = i;
-                }
-            }
-        }
-
-        if (!orderby.empty()) {
-            columnOrder = orderby[0];
-            comparatorOrder = orderby[1];
-
-            columnIndexOrder = 0;
-            for (int i = 0; i < headers.size(); i++) {
-                if (headers[i] == columnOrder) {
-                    columnIndexOrder = i;
-                }
-            }
-        }
-
-        cout << columnOrder << " " << comparatorOrder;
-
-        for (int i = 1; i < table.getTableData().size(); i++) {
+        for (int i = 1; i < table->getTableData().size(); i++) {
             int x = 0;
             vector<string> rowdata;
 
-            for (int j = 0; j < table.getTableData()[i].getRowData().size(); j++) { // Direction concern
-                if (table.getTableData()[0].getRowData()[j].getValue() == headers[x]) {
-                    if (!where.empty()) {
-
-                        if (operation == ">") {
-                            if (table.getTableData()[i].getRowData()[columnIndex].getValue() > comparator) {
-                                rowdata.push_back(table.getTableData()[i].getRowData()[j].getValue());
-                            }
-                        } else if (operation == "<") {
-                            if (table.getTableData()[i].getRowData()[columnIndex].getValue() < comparator) {
-                                rowdata.push_back(table.getTableData()[i].getRowData()[j].getValue());
-                            }
-                        } else if (operation == ">=") {
-                            if (table.getTableData()[i].getRowData()[columnIndex].getValue() >= comparator) {
-                                rowdata.push_back(table.getTableData()[i].getRowData()[j].getValue());
-                            }
-                        } else if (operation == "<=") {
-                            if (table.getTableData()[i].getRowData()[columnIndex].getValue() <= comparator) {
-                                rowdata.push_back(table.getTableData()[i].getRowData()[j].getValue());
-                            }
-                        } else if (operation == "=") {
-                            if (table.getTableData()[i].getRowData()[columnIndex].getValue() == comparator) {
-                                rowdata.push_back(table.getTableData()[i].getRowData()[j].getValue());
-                            }
-                        }
-
-                    } else {
-                        rowdata.push_back(table.getTableData()[i].getRowData()[j].getValue());
-                    }
+            for (int j = 0; j < table->getTableData()[i].getRowData().size(); j++) { // Direction concern
+                if (table->getTableData()[0].getRowData()[j].getValue() == headers[x]) {
+                    rowdata.push_back(table->getTableData()[i].getRowData()[j].getValue());
 
                     if (x < headers.size() - 1) {
                         x++;
@@ -138,16 +81,71 @@ public:
             }
         }
 
+        // Where Filter
+        if (!where.empty()) {
+            vector<Row> rowdata = {Row(headers)};
+
+            string column = where[0];
+            string operation = where[1];
+            string comparator = where[2];
+
+            int columnIndex = 0;
+            for (int i = 0; i < table->getTableData()[0].getRowData().size(); i++) {
+                if (table->getTableData()[0].getRowData()[i].getValue() == column) {
+                    columnIndex = i;
+                }
+            }
+
+            for (int i = 1; i < dummyrows.size(); i++) {
+                if (operation == ">") {
+                    if (table->getTableData()[i].getRowData()[columnIndex].getValue() > comparator) {
+                        rowdata.push_back(dummyrows[i]);
+                    }
+                } else if (operation == "<") {
+                    if (table->getTableData()[i].getRowData()[columnIndex].getValue() < comparator) {
+                        rowdata.push_back(dummyrows[i]);
+                    }
+                } else if (operation == ">=") {
+                    if (table->getTableData()[i].getRowData()[columnIndex].getValue() >= comparator) {
+                        rowdata.push_back(dummyrows[i]);
+                    }
+                } else if (operation == "<=") {
+                    if (table->getTableData()[i].getRowData()[columnIndex].getValue() <= comparator) {
+                        rowdata.push_back(dummyrows[i]);
+                    }
+                } else if (operation == "=") {
+                    if (table->getTableData()[i].getRowData()[columnIndex].getValue() == comparator) {
+                        rowdata.push_back(dummyrows[i]);
+                    }
+                }
+
+            }
+
+            dummyrows = rowdata;
+        }
+
+        // Orderby Filter
         if (!orderby.empty()) {
-            if (comparatorOrder == "descending") {
-                sort(dummyrows.begin() + 1, dummyrows.end(), [&columnIndexOrder](Row a, Row b) {return a.getRowData()[columnIndexOrder].getValue() > b.getRowData()[columnIndexOrder].getValue();});
-            } else if (comparatorOrder == "ascending"){
-                sort(dummyrows.begin() + 1, dummyrows.end(), [&columnIndexOrder](Row a, Row b) {return a.getRowData()[columnIndexOrder].getValue() < b.getRowData()[columnIndexOrder].getValue();});
+            string column = orderby[0];
+            string order = orderby[1];
+
+            int columnIndex = 0;
+            for (int i = 0; i < headers.size(); i++) {
+                if (headers[i] == column) {
+                    columnIndex = i;
+                }
+            }
+
+            if (order == "descending") {
+                sort(dummyrows.begin() + 1, dummyrows.end(), [&columnIndex](Row a, Row b) {return a.getRowData()[columnIndex].getValue() > b.getRowData()[columnIndex].getValue();});
+            } else if (order == "ascending"){
+                sort(dummyrows.begin() + 1, dummyrows.end(), [&columnIndex](Row a, Row b) {return a.getRowData()[columnIndex].getValue() < b.getRowData()[columnIndex].getValue();});
             }
         }
 
+        Table* retTable = new Table(headers, {"ANY"}, "RESPONSE");
+        retTable->setTableData(dummyrows);
 
-        retTable.setTableData(dummyrows);
         return retTable;
     }
 };
@@ -155,12 +153,13 @@ public:
 class Update : virtual public Connection {
 public:
     void addRow(string tableName, vector<string> row) {
-        if (&(this->database->getTable(tableName)) != this->database->getNullTable()) {
-            if (row.size() == this->database->getTable(tableName).getTableData()[0].getRowData().size()) {
-                if (this->database->getTable(tableName).verifyDataTypes(Row(row))) {
-                    this->database->getTable(tableName).getTableData().push_back(Row(row));
-                }
-            }
+        Table* table = this->database->getTable(tableName);
+
+        if (table != nullptr) {
+            vector<Row> tableData = table->getTableData();
+            tableData.push_back(Row(row));
+
+            table->setTableData(tableData);
         }
     }
 };
@@ -168,25 +167,27 @@ public:
 class Delete : virtual public Connection {
 public:
     void deleteRow(string tableName) {
-        if (this->database->getTable(tableName).getTableData().size() >= 2) {
-            this->database->getTable(tableName).getTableData().pop_back();
+        Table* table = this->database->getTable(tableName);
+
+        if (table->getTableData().size() >= 2) {
+            table->getTableData().pop_back();
         }
     }
 
     void deleteRow(string tableName, int k) {
-        Table& table = this->database->getTable(tableName);
-        vector<Row> dummy;
+        Table* table = this->database->getTable(tableName);
 
-        if (table.getTableData().size() >= 2) {
-            for (int i = 0; i < table.getTableData().size(); i++) {
+        if (table->getTableData().size() >= 2) {
+            vector<Row> dummy;
+            for (int i = 0; i < table->getTableData().size(); i++) {
                 if (i == k) {
                     continue;
                 }
 
-                dummy.push_back(table.getTableData()[i]);
+                dummy.push_back(table->getTableData()[i]);
             }
 
-            table.getTableData() = dummy;
+            table->setTableData(dummy);
         }
     }
 };

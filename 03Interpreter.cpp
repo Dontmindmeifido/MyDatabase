@@ -170,35 +170,33 @@ public:
         return instance;
     }
 
-    void runCompiler(string queries, Database* database, vector<Table>* READRESPONSE) {
+    void runCompiler(string queries, vector<Table*>* READRESPONSE) {
+        Compiler* compiler = Compiler::getInstance();
         Lexer* lexer = Lexer::getInstance();
+
         vector<vector<string>> wordList = lexer->runLexer(queries);
         
-        vector<Query> queriesVec;
-        Query dummy(database);
-
         // Build queries
         for (int k = 0; k < wordList.size(); k++) {
-            dummy.action = lexer->retToLower(wordList[k][0]);
-            dummy.destination = wordList[k][2];
-            dummy.source = lexer->splitArgument(wordList[k][1]);
+            Query query;
+            
+            query.action = lexer->retToLower(wordList[k][0]);
+            query.destination = wordList[k][2];
+            query.source = lexer->splitArgument(wordList[k][1]);
 
-            if (wordList[k].size() >= 4 && lexer->retToLower(dummy.action) == "read") {
+            if (wordList[k].size() >= 4 && lexer->retToLower(query.action) == "read") {
                 for (int j = 3; j < wordList[k].size(); j += 2) {
                     if (lexer->retToLower(wordList[k][j]) == "where") {
-                        dummy.where = lexer->tokenizeArgument(wordList[k][j + 1]);
+                        query.where = lexer->tokenizeArgument(wordList[k][j + 1]);
                     } else if (lexer->retToLower(wordList[k][j]) == "orderby") {
-                        dummy.orderby = lexer->tokenizeArgument(wordList[k][j + 1]);
+                        query.orderby = lexer->tokenizeArgument(wordList[k][j + 1]);
                     }
                 }
             }
 
-            queriesVec.push_back(dummy);
-        }
-
-        for (auto x: queriesVec) {
-            if (x.runQuery().getTableName() != database->getNullTable()->getTableName()) {
-                READRESPONSE->push_back(x.runQuery());
+            Table* queryResponse = query.runQuery();
+            if (queryResponse != nullptr) {
+                READRESPONSE->push_back(queryResponse);
             }
         }
     }

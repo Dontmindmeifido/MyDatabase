@@ -36,7 +36,7 @@ int main() {
     crud->addRow("HR", vector<string> {"Frederick", "Doe", "300", "5'8"});
     crud->addRow("HR", vector<string> {"Stevenson", "Stevens", "310", "6'3"});
 
-    Interface* interface = Interface::getInstance(db, lexer, compiler);
+    Interface* interface = Interface::getInstance();
     GLFWwindow* window = interface->initWindow();
     interface->Render(window);
 

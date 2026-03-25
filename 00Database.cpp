@@ -273,14 +273,11 @@ class Table {
     vector<string> tableDataTypes;
     string tableName;
 
-public:
-    Table(vector<string> header, vector<string> datatypes, string tableName) {
-        this->tableData.push_back(Row(header));
-        this->tableDataTypes = datatypes;
-        this->tableName = tableName;
-    }
-
     bool verifyDataTypes(Row tableData) {
+        if (tableDataTypes[0] == "ANY") {
+            return true;
+        }
+
         for (int i = 0; i < tableDataTypes.size(); i++) {
             if (tableDataTypes[i] != tableData.getRowData()[i].getData()->getType()) {
                 return false;
@@ -290,12 +287,34 @@ public:
         return true;
     }
 
+public:
+    Table(vector<string> header, vector<string> datatypes, string tableName) {
+        this->tableData.push_back(Row(header));
+        this->tableDataTypes = datatypes;
+        this->tableName = tableName;
+    }
+
     vector<Row>& getTableData() {
         return this->tableData;
     }
 
     void setTableData(vector<Row> tableData) {
-        this->tableData = tableData;
+        bool validType = true;
+        bool validColumns = true;
+        
+        for (int i = 1; i < tableData.size(); i++) {
+            if (!this->verifyDataTypes(tableData[i])) validType = false;
+        }
+
+        for (int i = 1; i < tableData.size(); i++) {
+            if (tableData[0].getRowData().size() != tableData[i].getRowData().size()) validColumns = false;
+        }
+
+        if (validType && validColumns) {
+            this->tableData = tableData;
+        } else {
+            cout << "INVALID WTF";
+        }
     }
 
     string getTableName() {
@@ -306,32 +325,28 @@ public:
 class Database {
     static Database* instance;
     vector<Table> databaseData; 
-    static Table* nullTbl;
 
     Database() {}
+
 public:
     static Database* getInstance() {
         if (!instance) instance = new Database();
         return instance;
     }
 
-    Table& getTable(string name) {
+    Table* getTable(string name) {
         for (int i = 0; i < databaseData.size(); i++) {
             if (databaseData[i].getTableName() == name) {
-                return databaseData[i];
+                return &databaseData[i];
             }
         }
 
         cout << "TABLE NOT FOUND";
-        return *nullTbl;
+        return nullptr;
     }
 
     vector<Table>& getDatabaseData() {
         return this->databaseData;
-    }
-
-    Table* getNullTable() {
-        return this->nullTbl;
     }
 
     void setDatabaseData(vector<Table> databaseData) {
@@ -340,4 +355,3 @@ public:
 };
 
 Database* Database::instance = nullptr;
-Table* Database::nullTbl = new Table({"NULL_TABLE"}, {"NULL_TABLE"}, "NULL_TABLE");
