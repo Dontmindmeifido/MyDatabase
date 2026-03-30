@@ -128,7 +128,7 @@ void Interface::EditorWindow(int buttonHeight) {
         std::cout << "---------" << "\n";
 
         for (auto table: *READRESPONSE) {
-            delete table; // Memory leak solve in query when creating the return table
+            delete table; // Memory leak solve in query when creating the return table (sepcifically the new from 01Crud in readTable)
         }
         
         READRESPONSE->clear();

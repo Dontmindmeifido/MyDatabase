@@ -16,8 +16,8 @@ public:
 
     std::vector<int> runDFA(std::string value);
 };
-
-// Purpose is with the lexic (regex)
+// Ideally, create a struct called token and create method inside it to identify the type of token
+// Purpose is to tokenize (regex), the lexer only operates on singular instructions (separated by ;), so consider an instruction separator class
 class Lexer: public Parser {
     static Lexer* instance;
     DFA dfaLexer;

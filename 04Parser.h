@@ -4,6 +4,9 @@
 #include <vector>
 #include "00Database.h"
 
+// Here simply make a strip method, it will modularize everything nicely
+
+
 class Parser {
 public:
     void toUpper(std::string& value);

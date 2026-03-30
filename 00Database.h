@@ -75,7 +75,7 @@ public:
 
     void setRowData(std::vector<Cell> rowData);
 };
-
+// Make a validator class whose sole purpose is to validate data on table creation / rows, etc...
 class Table {
     std::vector<Row> tableData;
     std::vector<std::string> tableDataTypes;
