@@ -12,7 +12,7 @@
 class Interface {   
     static Interface* instance;
 
-    std::string queryBuffer{"CREATE FIRST_NAME: VARCHAR, LAST_NAME: VARCHAR, BIRTHDATE: DATETIME in MODEL_EMPLOYEES;\nADDROW John, Cena, 12-12-1999 in MODEL_EMPLOYEES;\nDELROW 1 in MODEL_EMPLOYEES;\nREAD SURNAME in EMPLOYEES where SALARY > 300;"};
+    std::string queryBuffer{""};
     std::vector<Table*>* READRESPONSE;
     int selectedTable{-1};
 
