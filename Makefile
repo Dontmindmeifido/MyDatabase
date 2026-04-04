@@ -5,8 +5,8 @@ CXXFLAGS = -g -Wall -Wextra -MMD -MP \
            
 LIBS = -lglfw -lGL
 
-TARGET = db_engine
-BUILD_DIR = build
+TARGET = Launch.exe
+BUILD_DIR = .build
 
 USER_SRCS = $(wildcard src/*/*.cpp) \
             $(wildcard *.cpp)
