@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -g -MMD -MP \
+CXXFLAGS = -g -Wall -Wextra -MMD -MP \
            -I./external/imgui -I./external/imgui/backends \
            -I./src/Crud -I./src/Database -I./src/Interface -I./src/Interpreter -I./src/Misc
            

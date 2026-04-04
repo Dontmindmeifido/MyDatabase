@@ -9,7 +9,7 @@ void Delete::run(std::string tableName, std::string row) {
 
     if (table->getTableData().size() >= 2) {
         std::vector<Row> dummy;
-        for (int i = 0; i < table->getTableData().size(); i++) {
+        for (int i = 0; i < (int)table->getTableData().size(); i++) {
             if (i == stoi(row)) {
                 continue;
             }

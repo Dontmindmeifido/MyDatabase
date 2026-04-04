@@ -11,7 +11,7 @@ Table* Read::run(std::string tableName, std::vector<std::string> headers, std::v
         int column = 0;
         std::vector<std::string> rowdata;
 
-        for (int j = 0; j < table->getTableData()[i].getRowData().size(); j++) { // Direction sensitive
+        for (int j = 0; j < (int)table->getTableData()[i].getRowData().size(); j++) { // Direction sensitive
             if (table->getTableData()[0].getRowData()[j].getValue() == headers[column]) {
                 rowdata.push_back(table->getTableData()[i].getRowData()[j].getValue());
 
