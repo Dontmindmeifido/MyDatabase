@@ -43,23 +43,23 @@ Table* Read::run(std::string tableName, std::vector<std::string> headers, std::v
 
         for (int i = 1; i < (int)dummyrows.size(); i++) {
             if (operation == ">") {
-                if (table->getTableData()[i].getRowData()[columnIndex].getValue() > comparator) {
+                if (std::stoi(table->getTableData()[i].getRowData()[columnIndex].getValue()) > std::stoi(comparator)) {
                     rowdata.push_back(dummyrows[i]);
                 }
             } else if (operation == "<") {
-                if (table->getTableData()[i].getRowData()[columnIndex].getValue() < comparator) {
+                if (std::stoi(table->getTableData()[i].getRowData()[columnIndex].getValue()) < std::stoi(comparator)) {
                     rowdata.push_back(dummyrows[i]);
                 }
             } else if (operation == ">=") {
-                if (table->getTableData()[i].getRowData()[columnIndex].getValue() >= comparator) {
+                if (std::stoi(table->getTableData()[i].getRowData()[columnIndex].getValue()) >= std::stoi(comparator)) {
                     rowdata.push_back(dummyrows[i]);
                 }
             } else if (operation == "<=") {
-                if (table->getTableData()[i].getRowData()[columnIndex].getValue() <= comparator) {
+                if (std::stoi(table->getTableData()[i].getRowData()[columnIndex].getValue()) <= std::stoi(comparator)) {
                     rowdata.push_back(dummyrows[i]);
                 }
             } else if (operation == "=") {
-                if (table->getTableData()[i].getRowData()[columnIndex].getValue() == comparator) {
+                if (std::stoi(table->getTableData()[i].getRowData()[columnIndex].getValue()) == std::stoi(comparator)) {
                     rowdata.push_back(dummyrows[i]);
                 }
             }
@@ -82,9 +82,9 @@ Table* Read::run(std::string tableName, std::vector<std::string> headers, std::v
         }
 
         if (order == "descending") {
-            sort(dummyrows.begin() + 1, dummyrows.end(), [&columnIndex](Row a, Row b) {return a.getRowData()[columnIndex].getValue() > b.getRowData()[columnIndex].getValue();});
+            sort(dummyrows.begin() + 1, dummyrows.end(), [&columnIndex](Row a, Row b) {return std::stoi(a.getRowData()[columnIndex].getValue()) > std::stoi(b.getRowData()[columnIndex].getValue());});
         } else if (order == "ascending"){
-            sort(dummyrows.begin() + 1, dummyrows.end(), [&columnIndex](Row a, Row b) {return a.getRowData()[columnIndex].getValue() < b.getRowData()[columnIndex].getValue();});
+            sort(dummyrows.begin() + 1, dummyrows.end(), [&columnIndex](Row a, Row b) {return std::stoi(a.getRowData()[columnIndex].getValue()) < std::stoi(b.getRowData()[columnIndex].getValue());});
         }
     }
 
