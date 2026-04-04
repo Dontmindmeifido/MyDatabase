@@ -6,10 +6,10 @@ CXXFLAGS = -g -Wall -Wextra -MMD -MP \
 LIBS = -lglfw -lGL
 
 BUILD_DIR = build
-TARGET = $(BUILD_DIR)/Launch.exe
+TARGET = $(BUILD_DIR)/db_engine
 
 USER_SRCS = $(wildcard src/*/*.cpp) \
-            $(wildcard src/main.cpp)
+            $(wildcard src/*.cpp)
 
 IMGUI_SRCS = external/imgui/imgui.cpp \
              external/imgui/imgui_draw.cpp \
@@ -39,7 +39,7 @@ $(BUILD_DIR)/%.o: %.cpp
 
 clean:
 	@echo "Nuking the build directory and binary..."
-	rm -rf $(BUILD_DIR) $(TARGET)
+	rm -rf $(BUILD_DIR)
 
 .PHONY: all clean
 
