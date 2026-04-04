@@ -46,8 +46,8 @@ void Interface::DatabaseWindow() {
                 ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(20 + cursor.x + w*j, cursor.y + 20*i), ImVec2(20 + cursor.x + w*(j + 1) - 1, cursor.y + 20*(i + 1) - 1), IM_COL32(30, 30, 30, 255));
                 if (ImGui::IsMouseHoveringRect(ImVec2(20 + cursor.x + w*j, cursor.y + 20*i), ImVec2(20 + cursor.x + w*(j + 1) - 1, cursor.y + 20*(i + 1) - 1))) {
                     ImGui::BeginTooltip();
-                    ImGui::Text(&((table.getTableData()[0].getRowData()[j].getValue() + ": " + table.getTableData()[i].getRowData()[j].getDataType())[0]));
-                    ImGui::Text(&(("ROW " + std::to_string(i) + " " + "COL " + std::to_string(j + 1))[0]));
+                    ImGui::TextUnformatted((table.getTableData()[0].getRowData()[j].getValue() + ": " + table.getTableData()[i].getRowData()[j].getDataType()).c_str());
+                    ImGui::TextUnformatted(("ROW " + std::to_string(i) + " COL " + std::to_string(j + 1)).c_str());
                     ImGui::EndTooltip();
                 }
                 ImGui::GetWindowDrawList()->AddText(ImVec2(20 + 5 + cursor.x + w*j, cursor.y + 20*i), IM_COL32(255, 255, 255, 255), &(text[0]), &(text[text.size()]));
@@ -170,8 +170,8 @@ void Interface::EditorResponse() {
                 ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(20 + cursor.x + w*j, cursor.y + 20*i), ImVec2(20 + cursor.x + w*(j + 1) - 1, cursor.y + 20*(i + 1) - 1), IM_COL32(30, 30, 30, 255));
                 if (ImGui::IsMouseHoveringRect(ImVec2(20 + cursor.x + w*j, cursor.y + 20*i), ImVec2(20 + cursor.x + w*(j + 1) - 1, cursor.y + 20*(i + 1) - 1))) {
                     ImGui::BeginTooltip();
-                    ImGui::Text(&((table.getTableData()[0].getRowData()[j].getValue() + ": " + table.getTableData()[i].getRowData()[j].getDataType())[0]));
-                    ImGui::Text(&(("ROW " + std::to_string(i) + " " + "COL " + std::to_string(j + 1))[0]));
+                    ImGui::TextUnformatted((table.getTableData()[0].getRowData()[j].getValue() + ": " + table.getTableData()[i].getRowData()[j].getDataType()).c_str());
+                    ImGui::TextUnformatted(("ROW " + std::to_string(i) + " COL " + std::to_string(j + 1)).c_str());
                     ImGui::EndTooltip();
                 }
                 ImGui::GetWindowDrawList()->AddText(ImVec2(20 + 5 + cursor.x + w*j, cursor.y + 20*i), IM_COL32(255, 255, 255, 255), &(text[0]), &(text[text.size()]));
