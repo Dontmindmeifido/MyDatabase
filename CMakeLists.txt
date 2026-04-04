@@ -38,16 +38,24 @@ set(IMGUI_SRCS
 )
 
 # -------------------------------------------------------------------
-# 3. THE EXECUTABLE CONTRACT
+# 3. THIRD-PARTY LIBRARY COMPILATION (Shielded from strict flags)
 # -------------------------------------------------------------------
-add_executable(db_engine ${USER_SRCS} ${IMGUI_SRCS})
+add_library(imgui_lib STATIC ${IMGUI_SRCS})
+target_include_directories(imgui_lib PUBLIC 
+    external/imgui 
+    external/imgui/backends
+)
+target_link_libraries(imgui_lib PRIVATE glfw OpenGL::GL)
 
 # -------------------------------------------------------------------
-# 4. COMPILER INCLUDE FLAGS (-I equivalents)
+# 4. THE EXECUTABLE CONTRACT (Pure proprietary code)
+# -------------------------------------------------------------------
+add_executable(db_engine ${USER_SRCS})
+
+# -------------------------------------------------------------------
+# 5. COMPILER INCLUDE & LINKER FLAGS
 # -------------------------------------------------------------------
 target_include_directories(db_engine PRIVATE
-    external/imgui
-    external/imgui/backends
     src/Crud
     src/Database
     src/Interface
@@ -55,10 +63,7 @@ target_include_directories(db_engine PRIVATE
     src/Misc
 )
 
-# -------------------------------------------------------------------
-# 5. LINKER FLAGS (-l equivalents)
-# -------------------------------------------------------------------
-target_link_libraries(db_engine PRIVATE glfw OpenGL::GL)
+target_link_libraries(db_engine PRIVATE imgui_lib glfw OpenGL::GL)
 
 # -------------------------------------------------------------------
 # 6. STRICT COMPILER FLAGS (Target-Scoped to protect external libs)
