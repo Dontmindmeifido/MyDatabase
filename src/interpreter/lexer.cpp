@@ -1,6 +1,6 @@
-#include "Lexer.h"
+#include "lexer.h"
 
-Lexer::Lexer(): dfaTokenizer(
+Lexer::Lexer(): dfa_tokenizer(
                 std::vector<int> {0, 1, 2, 3, 4, 5},     // " ", "\n", ",", ":", ";", "%" 
                 std::vector<int> {0, 1, 2, 3, 4},        // "Token", "Space", "Separator", "NewInstruction", "Error"
                 std::vector<int> {
@@ -13,35 +13,35 @@ Lexer::Lexer(): dfaTokenizer(
                 std::vector<std::string> {" ", "\n", ",", ":", ";", "%"}
                 ) {}
 
-Lexer* Lexer::getInstance() {
+Lexer* Lexer::get_instance() {
     if (!instance) instance = new Lexer();
     return instance;
 }
 
 // Returns a list (instructions) of list of tokens that the interpreter can understand
-std::vector<std::vector<std::string>> Lexer::runLexer(std::string queries) {
-    std::vector<std::vector<std::string>> tokenList = {{""}};
+std::vector<std::vector<std::string>> Lexer::run(std::string queries) {
+    std::vector<std::vector<std::string>> token_list = {{""}};
 
-    std::vector<int> state = dfaTokenizer.run(queries);
+    std::vector<int> state = dfa_tokenizer.run(queries);
     for (int i = 0; i < (int)state.size(); i++) {
-        int lastIndex0 = tokenList.size() - 1;
-        int lastIndex1 = tokenList[lastIndex0].size() - 1;
+        int last_index0 = token_list.size() - 1;
+        int last_index1 = token_list[last_index0].size() - 1;
 
-        std::vector<std::string>& lastInstruction= tokenList[lastIndex0];
-        std::string& lastToken = lastInstruction[lastIndex1];
+        std::vector<std::string>& last_instruction= token_list[last_index0];
+        std::string& lastToken = last_instruction[last_index1];
 
         switch (state[i]) {
             case 0:
                 lastToken += queries[i];
                 break;
             case 1:
-                if (lastToken != "") lastInstruction.push_back("");
+                if (lastToken != "") last_instruction.push_back("");
                 break;
             case 2:
-                if (lastToken != "") lastInstruction.push_back("");
+                if (lastToken != "") last_instruction.push_back("");
                 break;
             case 3:
-                tokenList.push_back({""});
+                token_list.push_back({""});
                 break;
             case 4:
                 std::cout << "ERROR";
@@ -50,14 +50,14 @@ std::vector<std::vector<std::string>> Lexer::runLexer(std::string queries) {
     }
 
     // Debug
-    std::cout << "\nDEBUG TOKENLIST\n";
-    for (auto x: tokenList) {
+    std::cout << "\nDEBUG token_lisT\n";
+    for (auto x: token_list) {
         for (auto y: x) {
             std::cout << y;
         }
         std::cout << std::endl;
     }
-    std::cout << "\nDEBUG TOKENLIST\n";
+    std::cout << "\nDEBUG token_lisT\n";
 
-    return tokenList;
+    return token_list;
 }

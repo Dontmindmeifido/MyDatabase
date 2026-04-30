@@ -7,25 +7,33 @@
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 #include "misc/cpp/imgui_stdlib.h"
-#include "../Interpreter/Interpreter.h"
+#include "../interpreter/interpreter.h"
 
 class Interface {   
     static Interface* instance;
 
-    std::string queryBuffer{""};
+    std::string query_buffer{"Insert Jane, Karera, 21, YES in GUESTS;"};
     std::vector<Table*>* READRESPONSE;
-    int selectedTable{-1};
+    std::vector<std::vector<int>> colors{{50, 150, 200, 255}, 
+                                         {60, 200, 160, 255},
+                                         {200, 100, 50, 255},
+                                         {200, 200, 220, 255},
+                                         {150, 100, 100, 255},
+                                         {150, 100, 150, 255},
+                                         {150, 100, 150, 255},
+                                         {255, 255, 255, 255}};
+    int selected_table{-1};
 
-    void DatabaseWindow();
-    void EditorWindow(int buttonHeight = 30);
-    void EditorResponse();
+    void render_database_window();
+    void render_editor_window(int buttonHeight = 30);
+    void render_editor_console();
 
     Interface();
 
 public:
-    static Interface* getInstance();
+    static Interface* get_instance();
 
-    GLFWwindow* initWindow();
+    GLFWwindow* init_window();
 
     void Render(GLFWwindow* window);
 };

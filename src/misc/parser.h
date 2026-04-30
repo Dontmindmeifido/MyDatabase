@@ -2,14 +2,14 @@
 #include <string>
 #include <algorithm>
 #include <vector>
-#include "../Database/Database.h"
+#include "../database/database.h"
 
 class Parser {
 public:
-    std::string lower(std::string value);
-    std::string strip(std::string value);
-    std::vector<std::string> getSpacedWords(std::string queries);
-    std::vector<std::string> partitionQuery(std::string value);
-    std::vector<std::string> getSnippet(std::string lastWord, Database& db);
-    std::pair<int, int> getCursorPosition(std::string queryBuffer);
+    std::string get_lower(std::string value);
+    std::string get_stripped(std::string value);
+    std::vector<std::string> get_spaced_words(std::string queries);
+    std::vector<std::string> get_partitioned_query(std::string value);
+    std::vector<std::string> get_snippets(std::string lastWord, Database& db);
+    std::pair<int, int> get_cursor_position(std::string queryBuffer);
 };

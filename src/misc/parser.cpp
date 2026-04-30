@@ -1,12 +1,12 @@
-#include "Parser.h"
-#include "../Interpreter/Interpreter.h"
+#include "parser.h"
+#include "../interpreter/interpreter.h"
 
-std::string Parser::lower(std::string value) {
+std::string Parser::get_lower(std::string value) {
     transform(value.begin(), value.end(), value.begin(), [](char x) {return tolower(x);});
     return value;
 } 
 
-std::string Parser::strip(std::string value) {
+std::string Parser::get_stripped(std::string value) {
     std::string dummy = "";
     for (auto x: value) {
         if (x != ' ' && x != '\n') {
@@ -17,27 +17,27 @@ std::string Parser::strip(std::string value) {
     return dummy;
 }
 
-std::vector<std::string> Parser::getSpacedWords(std::string queries) {
-    std::vector<std::string> wordList = partitionQuery(queries);
+std::vector<std::string> Parser::get_spaced_words(std::string queries) {
+    std::vector<std::string> word_list = get_partitioned_query(queries);
 
     std::string sum = "";
-    for (int i = 0; i < (int)wordList.size(); i++) {
+    for (int i = 0; i < (int)word_list.size(); i++) {
         const std::string orgsum = sum;
-        for (int j = 0; j < (int)wordList[i].size(); j++) {
-            if (wordList[i][j] == '\n') {
+        for (int j = 0; j < (int)word_list[i].size(); j++) {
+            if (word_list[i][j] == '\n') {
                 sum += "\n";
             } else {
                 sum += " ";
             }
         }
 
-        wordList[i] = orgsum + wordList[i];
+        word_list[i] = orgsum + word_list[i];
     }
 
-    return wordList;
+    return word_list;
 }
 
-std::vector<std::string> Parser::partitionQuery(std::string value) {
+std::vector<std::string> Parser::get_partitioned_query(std::string value) {
     std::vector<std::string> dummy = {""};
 
     for (auto x: value) {
@@ -51,14 +51,14 @@ std::vector<std::string> Parser::partitionQuery(std::string value) {
     return dummy;
 }
 
-std::vector<std::string> Parser::getSnippet(std::string lastWord, Database& db) {
-    std::vector<std::string> checks = Interpreter::getInstance()->getAllTokens();
+std::vector<std::string> Parser::get_snippets(std::string lastWord, Database& db) {
+    std::vector<std::string> checks = Interpreter::get_instance()->get_all_tokens();
 
     // Add other tables' data
-    for (auto x: db.getTables()) {
-        checks.push_back(x.getName());
-        for (auto y: x.getRows()[0].getCells()) {
-            checks.push_back(y.getValue() + ":" + x.getName());
+    for (auto x: db.get_tables()) {
+        checks.push_back(x.get_name());
+        for (auto y: x.get_rows()[0].get_cells()) {
+            checks.push_back(y.get_value() + ":" + x.get_name());
         }
     }
 
@@ -68,7 +68,7 @@ std::vector<std::string> Parser::getSnippet(std::string lastWord, Database& db) 
     if (lastWord[0] == '(') lastWord = lastWord.substr(1, -1);
 
     for (auto word: checks) {
-        if ( lower(word.substr(0, std::min(int(word.length()), int(lastWord.length())))) == lower(lastWord.substr(0, std::min(int(word.length()), int(lastWord.length())))) ) {
+        if ( get_lower(word.substr(0, std::min(int(word.length()), int(lastWord.length())))) == get_lower(lastWord.substr(0, std::min(int(word.length()), int(lastWord.length())))) ) {
             ret.push_back(word);
         }
     }
@@ -76,7 +76,7 @@ std::vector<std::string> Parser::getSnippet(std::string lastWord, Database& db) 
     return ret;
 }
 
-std::pair<int, int> Parser::getCursorPosition(std::string queryBuffer) {
+std::pair<int, int> Parser::get_cursor_position(std::string queryBuffer) {
     int x = 0;
     int y = 0;
 

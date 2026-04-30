@@ -10,10 +10,10 @@ protected:
 public:
     virtual ~Primitive() {};
 
-    static bool isNumber(std::string value);
-    static bool isNumber(char value);
-    static bool isDatetime(std::string value);
-    std::string getValue() const;
+    static bool is_number(std::string value);
+    static bool is_number(char value);
+    static bool is_datetime(std::string value);
+    std::string get_value() const;
     virtual Primitive* clone() const = 0;
 };
 

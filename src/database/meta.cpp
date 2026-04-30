@@ -1,8 +1,8 @@
-#include "Meta.h"
+#include "meta.h"
 
 Meta::Meta() {}
 
-Meta::Meta(std::vector<std::string> dataTypes) {
-    this->dataTypes = dataTypes;
-    this->columnSize = dataTypes.size();
+Meta::Meta(std::vector<std::string> data_types) {
+    this->data_types = data_types;
+    this->column_size = data_types.size();
 }

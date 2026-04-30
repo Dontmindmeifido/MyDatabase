@@ -1,52 +1,52 @@
-#include "Type.h"
+#include "type.h"
 
-bool Primitive::isNumber(std::string value) {
-    bool isNumber = true;
+bool Primitive::is_number(std::string value) {
+    bool is_number = true;
     for (auto x: value) {
         if (!(char(x) >= 48 && char(x) <= 57)) {
-            isNumber = false;
+            is_number = false;
         }
     }
 
-    return isNumber;
+    return is_number;
 }
 
-bool Primitive::isNumber(char value) {
-    bool isNumber = true;
+bool Primitive::is_number(char value) {
+    bool is_number = true;
     if (!(char(value) >= 48 && char(value) <= 57)) {
-        isNumber = false;
+        is_number = false;
     }
 
-    return isNumber;
+    return is_number;
 }
 
-bool Primitive::isDatetime(std::string value) {
-    bool isDatetime = true;
+bool Primitive::is_datetime(std::string value) {
+    bool is_datetime = true;
     std::vector<char> FORMAT = {'D', 'D', '-', 'M', 'M', '-', 'Y', 'Y', 'Y', 'Y'};
 
     for (int i = 0; i < (int)FORMAT.size(); i++) {
         switch(FORMAT[i]) {
             case 'D':
-                if (!isNumber(value[i])) isDatetime = false;
+                if (!is_number(value[i])) is_datetime = false;
                 break;
             case 'M':
-                    if (!isNumber(value[i])) isDatetime = false;
+                    if (!is_number(value[i])) is_datetime = false;
                 break;
             case 'Y':
-                if (!isNumber(value[i])) isDatetime = false;
+                if (!is_number(value[i])) is_datetime = false;
                 break;
             case '-':
                 if (value[i] != '-') {
-                    isDatetime = false;
+                    is_datetime = false;
                 }
                 break;
         }
     }
 
-    return isDatetime;
+    return is_datetime;
 }
 
-std::string Primitive::getValue() const {
+std::string Primitive::get_value() const {
     return this->value;
 }
 
@@ -59,11 +59,11 @@ Varchar::Varchar(std::string value) {
 }
 
 Varchar::Varchar(Varchar* obj) {
-    this->value = obj->getValue();
+    this->value = obj->get_value();
 }
 
 Varchar* Varchar::clone() const {
-    return new Varchar(this->getValue());
+    return new Varchar(this->get_value());
 }
 
 Number::Number() {
@@ -75,11 +75,11 @@ Number::Number(std::string value) {
 }
 
 Number::Number(Number* obj) {
-    this->value = obj->getValue();
+    this->value = obj->get_value();
 }
 
 Number* Number::clone() const {
-    return new Number(this->getValue());
+    return new Number(this->get_value());
 }
 
 Datetime::Datetime() {
@@ -91,9 +91,9 @@ Datetime::Datetime(std::string value) {
 }
 
 Datetime::Datetime(Datetime* obj) {
-    this->value = obj->getValue();
+    this->value = obj->get_value();
 }
 
 Datetime* Datetime::clone() const {
-    return new Datetime(this->getValue());
+    return new Datetime(this->get_value());
 }

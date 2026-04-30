@@ -1,4 +1,4 @@
-#include "Interpreter.h"
+#include "interpreter.h"
 
 /*
 CREATE h1:VARCHAR, h2:NUMBER, ... in TABLE_NAME
@@ -13,7 +13,7 @@ READ h1, h2, ... in TABLE_NAME where x y z orderby ascending
 */
 
 Interpreter::Interpreter(): 
-             dfaCreate(
+             dfa_create(
                 std::vector<int> {0, 1},
                 std::vector<int> {0, 1, 2, 3, 4},
                 std::vector<int> {
@@ -25,7 +25,7 @@ Interpreter::Interpreter():
                                  },
                 std::vector<std::string> {"in", "%"}
              ),
-             dfaRead(
+             dfa_read(
                 std::vector<int> {0, 1, 2, 3},
                 std::vector<int> {0, 1, 2, 3, 4, 5, 6},
                 std::vector<int> {
@@ -39,7 +39,7 @@ Interpreter::Interpreter():
                                  },
                 std::vector<std::string> {"in", "where", "orderby", "%"}
              ),
-             dfaUpdate(
+             dfa_insert(
                 std::vector<int> {0, 1},
                 std::vector<int> {0, 1, 2, 3},
                 std::vector<int> {
@@ -50,7 +50,20 @@ Interpreter::Interpreter():
                                  },
                 std::vector<std::string> {"in", "%"}
              ), 
-             dfaDelete(
+             dfa_update(
+                std::vector<int> {0, 1},
+                std::vector<int> {0, 1, 2, 3, 4, 5, 6},
+                std::vector<int> {
+                                  6, 1,
+                                  6, 2,
+                                  6, 3,
+                                  4, 6,
+                                  6, 5,
+                                  6, 6
+                                 },
+                std::vector<std::string> {"in", "%"}
+             ), 
+             dfa_delete(
                 std::vector<int> {0, 1},
                 std::vector<int> {0, 1, 2, 3},
                 std::vector<int> {
@@ -60,28 +73,59 @@ Interpreter::Interpreter():
                                   3, 3
                                  },
                 std::vector<std::string> {"in", "%"}
-             ) {}
+             ),
+             dfa_join(
+                std::vector<int> {0, 1},
+                std::vector<int> {0, 1, 2, 3},
+                std::vector<int> {
+                                  1, 0,
+                                  3, 2,
+                                  3, 3,
+                                  3, 3
+                                 },
+                std::vector<std::string> {"in", "%"}
+             ),
+             command(
+                std::vector<int> {0},
+                std::vector<int> {0, 1, 2},
+                std::vector<int> {
+                                  1,
+                                  2,
+                                  2
+                                 },
+                std::vector<std::string> {"%"}
+            ),
+            keyword(
+                std::vector<int> {0},
+                std::vector<int> {0, 1},
+                std::vector<int> {
+                                  1,
+                                  1
+                                 },
+                std::vector<std::string> {"%"}
+            ) {}
 
 
-Interpreter* Interpreter::getInstance() {
+Interpreter* Interpreter::get_instance() {
     if (!instance) instance = new Interpreter();
     return instance;
 }
 
-void Interpreter::runInterpreter(std::string queries, std::vector<Table*>* READRESPONSE) {
-    Lexer* lexer = Lexer::getInstance();
+void Interpreter::run(std::string queries, std::vector<Table*>* READRESPONSE) {
+    Lexer* lexer = Lexer::get_instance();
     
-    std::vector<std::vector<std::string>> instructions = lexer->runLexer(queries);
+    std::vector<std::vector<std::string>> instructions = lexer->run(queries);
     for (std::vector<std::string> token: instructions) {
-        Query query;
-        
-        query.action = lexer->lower(token[0]);
+        Query* query = QueryFactory::get_instance()->get_query(lexer->get_lower(token[0]));
+        if (query == nullptr) return;
+
+        query->action = lexer->get_lower(token[0]);
         token.erase(token.begin());
-        
+
         // Find query index
         int index = -1;
-        for (int i = 0; i < (int)actionTokens.size(); i++) {
-            if (actionTokens[i] == query.action) {
+        for (int i = 0; i < (int)action_tokens.size(); i++) {
+            if (action_tokens[i] == query->action) {
                 index = i;
                 break;
             }
@@ -93,18 +137,18 @@ void Interpreter::runInterpreter(std::string queries, std::vector<Table*>* READR
             case -1:
                 continue;
             case 0:
-                state = dfaCreate.run(token);
+                state = dfa_create.run(token);
 
                 for (int i = 0; i < (int)state.size(); i++) {
                     switch (state[i]) {
                         case 0:
-                            query.actionParameters1.push_back(token[i]);
+                            query->action_parameters1.push_back(token[i]);
                             break;
                         case 1:
-                            query.actionParameters0.push_back(token[i]);
+                            query->action_parameters0.push_back(token[i]);
                             break;
                         case 3:
-                            query.table = token[i];
+                            query->table = token[i];
                             break;
                         case 4:
                             std::cout << "ERROR CREATE";
@@ -114,16 +158,16 @@ void Interpreter::runInterpreter(std::string queries, std::vector<Table*>* READR
 
                 break;
             case 1:
-                state = dfaRead.run(token);
+                state = dfa_read.run(token);
                 
                 for (int i = 0; i < (int)state.size(); i++) {
                     switch (state[i]) {
                         case 0:
-                            query.actionParameters0.push_back(token[i]);
+                            query->action_parameters0.push_back(token[i]);
                             std::cout << token[i];
                             break;
                         case 2:
-                            query.table = token[i];
+                            query->table = token[i];
                             std::cout << token[i];
                             break; 
                         case 3:
@@ -134,10 +178,10 @@ void Interpreter::runInterpreter(std::string queries, std::vector<Table*>* READR
                             break; 
                         case 5:
                             if (filter == "where") {
-                                query.filterWhereParameters.push_back(token[i]);
+                                query->filter_where_parameters.push_back(token[i]);
                                 std::cout << token[i];
                             } else if (filter == "orderby") {
-                                query.filterOrderByParameters.push_back(token[i]);
+                                query->filter_order_by_parameters.push_back(token[i]);
                             }
                             break; 
                         case 6:
@@ -148,15 +192,15 @@ void Interpreter::runInterpreter(std::string queries, std::vector<Table*>* READR
 
                 break;
             case 2:
-                state = dfaUpdate.run(token);
+                state = dfa_insert.run(token);
 
                 for (int i = 0; i < (int)state.size(); i++) {
                     switch (state[i]) {
                         case 0:
-                            query.actionParameters0.push_back(token[i]);
+                            query->action_parameters0.push_back(token[i]);
                             break;
                         case 2:
-                            query.table = token[i];
+                            query->table = token[i];
                             break;
                         case 3:
                             std::cout << "ERROR UPDATE";
@@ -166,17 +210,17 @@ void Interpreter::runInterpreter(std::string queries, std::vector<Table*>* READR
 
                 break;
             case 3:
-                state = dfaDelete.run(token);
+                state = dfa_delete.run(token);
 
                 for (int i = 0; i < (int)state.size(); i++) {
                     switch (state[i]) {
                         case 0:
-                            query.actionParameters0.push_back(token[i]);
-                            std::cout << std::endl << query.actionParameters0[0] << std::endl;
+                            query->action_parameters0.push_back(token[i]);
+                            std::cout << std::endl << query->action_parameters0[0] << std::endl;
                             break;
                         case 2:
-                            query.table = token[i];
-                            std::cout << std::endl << query.table << std::endl;
+                            query->table = token[i];
+                            std::cout << std::endl << query->table << std::endl;
                             break;
                         case 3:
                             std::cout << "ERROR DELETE";
@@ -185,21 +229,104 @@ void Interpreter::runInterpreter(std::string queries, std::vector<Table*>* READR
                 }
 
                 break;
+            case 4:
+                state = dfa_join.run(token);
+
+                for (int i = 0; i < (int)state.size(); i++) {
+                    switch (state[i]) {
+                        case 0:
+                            query->action_parameters0.push_back(token[i]);
+                            break;
+                        case 2:
+                            query->table = token[i];
+                            break;
+                        case 3:
+                            std::cout << "ERROR JOIN";
+                            return;
+                    }
+                }
+
+                break;
+            case 5:
+                state = dfa_update.run(token);
+
+                for (int i = 0; i < (int)state.size(); i++) {
+                    switch (state[i]) {
+                        case 1:
+                            query->action_parameters0.push_back(token[i]);
+                            std::cout << std::endl << query->action_parameters0[0] << std::endl;
+                            break;
+                        case 2:
+                            query->action_parameters0.push_back(token[i]);
+                            std::cout << std::endl << query->action_parameters0[0] << std::endl;
+                            break;
+                        case 3:
+                            query->action_parameters0.push_back(token[i]);
+                            std::cout << std::endl << query->action_parameters0[0] << std::endl;
+                            break;
+                        case 5:
+                            query->table = token[i];
+                            std::cout << std::endl << query->table << std::endl;
+                            break;
+                        case 6:
+                            std::cout << "ERROR DELETE";
+                            return;
+                    }
+                }
+
+                break;
+            case 6:
+                state = command.run(token);
+
+                for (int i = 0; i < (int)state.size(); i++) {
+                    switch (state[i]) {
+                        case 1:
+                            query->action_parameters0.push_back(token[i]);
+                            std::cout << std::endl << query->action_parameters0[0] << std::endl;
+                            break;
+                        case 2:
+                            std::cout << "ERROR COMMAND";
+                            return;
+                    }
+                }
+
+                break;
+            case 7:
+                state = command.run(token);
+
+                for (int i = 0; i < (int)state.size(); i++) {
+                    switch (state[i]) {
+                        case 1:
+                            query->action_parameters0.push_back(token[i]);
+                            std::cout << std::endl << query->action_parameters0[0] << std::endl;
+                            break;
+                        case 2:
+                            std::cout << "ERROR COMMAND";
+                            return;
+                    }
+                }
+
+                break;
+            case 8:
+                state = keyword.run(token);
+                break;
         }
 
-        // Run query
-        Table* queryResponse = query.runQuery(Database::getInstance());
+        // Run queries
+        Table* queryResponse = query->run(Database::get_instance());
         if (queryResponse != nullptr) {
             READRESPONSE->push_back(queryResponse);
         }
+
+        delete query;
     }
 }
 
-std::vector<std::string> Interpreter::getAllTokens() {
+std::vector<std::string> Interpreter::get_all_tokens() {
     std::vector<std::string> tokens;
 
-    for (auto token: actionTokens) tokens.push_back(token);
-    for (auto token: filterTokens) tokens.push_back(token);
+    for (auto token: action_tokens) tokens.push_back(token);
+    for (auto token: filter_tokens) tokens.push_back(token);
 
     return tokens;
 }

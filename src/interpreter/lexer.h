@@ -1,15 +1,15 @@
 #pragma once
-#include "../Misc/Parser.h"
-#include "Dfa.h"
+#include "../misc/parser.h"
+#include "dfa.h"
 
 class Lexer: public Parser {
     static Lexer* instance;
-    Dfa dfaTokenizer;
+    Dfa dfa_tokenizer;
 
     Lexer();
 
 public:
-    static Lexer* getInstance();
+    static Lexer* get_instance();
 
-    std::vector<std::vector<std::string>> runLexer(std::string queries);
+    std::vector<std::vector<std::string>> run(std::string queries);
 };

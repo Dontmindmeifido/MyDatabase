@@ -1,4 +1,4 @@
-#include "Error.h"
+#include "error.h"
 
 TableDataError::TableDataError() : std::runtime_error("Input does not correspond to table size") {};
 
