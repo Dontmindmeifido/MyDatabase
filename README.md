@@ -3,6 +3,8 @@
 ![Main Interface](assets/images/main_interface.png)
 > *A look at the main MyDatabase visual interface.*
 
+** OUTDATED ** //
+
 **MyDatabase** is a custom database manager featuring a bespoke SQL-like query compiler and a visual interface. Built heavily on object-oriented C++ principles, the project handles everything from memory-safe CRUD operations to custom token parsing using Deterministic Finite Automata (DFA).
 
 ## Key Features
