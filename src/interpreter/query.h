@@ -2,7 +2,7 @@
 #include <vector>
 #include <string>
 #include "../database/database.h"
-#include "../file_manager/manager.h"
+#include "../disk_storage/manager.h"
 
 struct Query {
     std::string action;
@@ -11,6 +11,8 @@ struct Query {
     std::string table;
     std::vector<std::string> filter_where_parameters;
     std::vector<std::string> filter_order_by_parameters;
+    std::string database_file {".database.version_control"};
+    std::string undo_key {"undo_key"};
 
     virtual Table* run(Database* database) = 0;
     virtual ~Query() = default;

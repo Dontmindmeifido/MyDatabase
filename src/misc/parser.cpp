@@ -9,7 +9,7 @@ std::string Parser::get_lower(std::string value) {
 std::string Parser::get_stripped(std::string value) {
     std::string dummy = "";
     for (auto x: value) {
-        if (x != ' ' && x != '\n') {
+        if (x != ' ' && x != '\n' && x != ';') {
             dummy += x;
         }
     }
@@ -39,14 +39,19 @@ std::vector<std::string> Parser::get_spaced_words(std::string queries) {
 
 std::vector<std::string> Parser::get_partitioned_query(std::string value) {
     std::vector<std::string> dummy = {""};
-
+    
     for (auto x: value) {
-        if ((x == ' ' || x == '\n') && dummy[dummy.size() - 1] != "") {
+        if ((x == ' ' || x == '\n') && dummy[dummy.size() - 1] != "" || dummy[dummy.size() - 1] == ";") {
             dummy.push_back("");
         }
 
-        dummy[dummy.size() - 1] += x;
+        if (x != ';') {
+            dummy[dummy.size() - 1] += x;
+        } else {
+            dummy.push_back(";");
+        }
     }
+
 
     return dummy;
 }

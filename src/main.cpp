@@ -1,5 +1,5 @@
 #include "interface/interface.h"
-#include "file_manager/manager.h"
+#include "disk_storage/manager.h"
 
 int main() {
     Database::get_instance()->create_table("GUESTS", 
@@ -67,9 +67,7 @@ int main() {
     Database::get_instance()->insert_row("BILLS", std::vector<std::string> {"9903", "8003", "35000", "NO"});
     Database::get_instance()->insert_row("BILLS", std::vector<std::string> {"9904", "8004", "400", "YES"});
     Database::get_instance()->insert_row("BILLS", std::vector<std::string> {"9905", "8005", "5600", "NO"});
-
-    //manager.save_database(Database::get_instance(), "database.db", "ruslan112");
-    Manager::get_instance()->get_database("database.db", "ruslan");
+    Database::get_instance()->insert_row("BILLS", std::vector<std::string> {"9905", "8005", "5600", "NO"});
 
     Interface* interface = Interface::get_instance();
     GLFWwindow* window = interface->init_window();

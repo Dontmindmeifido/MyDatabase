@@ -3,11 +3,10 @@
 #include <vector>
 #include <iostream>
 #include <algorithm>
-#include "../error/error.h"
-#include "type.h"
+#include "datatype.h"
 #include "meta.h"
 #include "validator.h"
-#include "../file_manager/observer.h"
+#include "../disk_storage/version_control.h"
 
 class Cell {
     Primitive* cell;

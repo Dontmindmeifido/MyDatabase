@@ -1,10 +1,13 @@
 #include "manager.h"
 
-Database* Manager::get_database(std::string file_name, std::string password) {
-    Database* database = Database::get_instance();
+Database* Manager::get_database(Database* database, std::string file_name, std::string password) {
+    file_name = "disk/" + file_name;
+
+    if (!verify_hash(file_name, password)) return nullptr;
     database->get_tables().clear();
 
-    std::ifstream database_file(file_name);
+    decipher_file(file_name, password);
+    std::ifstream database_file(crypted_file);
 
     char chr;
     std::string value = "";
@@ -45,10 +48,15 @@ Database* Manager::get_database(std::string file_name, std::string password) {
         }
     }
 
+    database_file.clear();
+
     return database;
 }
 
 void Manager::save_database(Database* database, std::string file_name, std::string password) {
+    file_name = "disk/" + file_name;
+
+    generate_hash(file_name, password);
     std::ofstream database_file(file_name);
 
     for (Table& table: database->get_tables()) {
@@ -74,17 +82,70 @@ void Manager::save_database(Database* database, std::string file_name, std::stri
             database_file << char(5);
         }
     }
+
+    database_file.close();
+    cipher_file(file_name, password);
+
+    std::ifstream in(crypted_file, std::ios::binary);
+
+    char chr;
+    database_file.open(file_name);
+    while(in.get(chr)) {
+        database_file << chr;
+    }
+
+    in.clear();
 }
 
 void Manager::cipher_file(std::string file_in, std::string password) {
-    std::ifstream in("database.db", std::ios::binary);
-    std::ofstream out("database.encrypted", std::ios::binary);
+    std::ifstream in(file_in, std::ios::binary);
+    std::ofstream out(crypted_file, std::ios::binary);
 
     char chr;
     int key = 0;
     while (in.get(chr)) {
         out.put(chr ^ (password[key++ % password.length()]));
     }
+}
+
+void Manager::decipher_file(std::string file_out, std::string password) {
+    std::ifstream in(file_out, std::ios::binary);
+    std::ofstream out(crypted_file, std::ios::binary);
+
+    char chr;
+    int key = 0;
+    while (in.get(chr)) {
+        out.put(chr ^ (password[key++ % password.length()]));
+    }
+}
+
+void Manager::generate_hash(std::string file_name, std::string password) {
+    std::ofstream out(file_name + hash_file, std::ios::binary);
+
+    int key = 0;
+    for (char& chr: password) {
+        out.put(chr ^ (password[key++ % password.length()]));
+    }
+}
+
+bool Manager::verify_hash(std::string file_name, std::string password) {
+    std::ifstream in(file_name + hash_file, std::ios::binary);
+
+    char chr;
+    int key = 0;
+    int i = 0;
+    char decrypted;
+    while (in.get(chr)) {
+        decrypted = chr ^ (password[key++ % password.length()]);
+
+        if (password[i] == decrypted) {
+            i++;
+        } else {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 Manager* Manager::get_instance() {

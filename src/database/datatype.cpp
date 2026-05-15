@@ -1,4 +1,4 @@
-#include "type.h"
+#include "datatype.h"
 
 bool Primitive::is_number(std::string value) {
     bool is_number = true;

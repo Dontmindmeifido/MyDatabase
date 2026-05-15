@@ -1,17 +1,5 @@
 #include "interpreter.h"
 
-/*
-CREATE h1:VARCHAR, h2:NUMBER, ... in TABLE_NAME
-
-ADDROW c1, c2, ... in TABLE_NAME
-
-DELROW k in TABLE_NAME
-
-DELROW 2 in TABLE_NAME
-
-READ h1, h2, ... in TABLE_NAME where x y z orderby ascending
-*/
-
 Interpreter::Interpreter(): 
              dfa_create(
                 std::vector<int> {0, 1},
@@ -87,11 +75,12 @@ Interpreter::Interpreter():
              ),
              command(
                 std::vector<int> {0},
-                std::vector<int> {0, 1, 2},
+                std::vector<int> {0, 1, 2, 3},
                 std::vector<int> {
                                   1,
                                   2,
-                                  2
+                                  3,
+                                  3
                                  },
                 std::vector<std::string> {"%"}
             ),
@@ -111,7 +100,7 @@ Interpreter* Interpreter::get_instance() {
     return instance;
 }
 
-void Interpreter::run(std::string queries, std::vector<Table*>* READRESPONSE) {
+void Interpreter::run(std::string queries, std::vector<Table*>* console_table_buffer) {
     Lexer* lexer = Lexer::get_instance();
     
     std::vector<std::vector<std::string>> instructions = lexer->run(queries);
@@ -285,6 +274,10 @@ void Interpreter::run(std::string queries, std::vector<Table*>* READRESPONSE) {
                             std::cout << std::endl << query->action_parameters0[0] << std::endl;
                             break;
                         case 2:
+                            query->action_parameters0.push_back(token[i]);
+                            std::cout << std::endl << query->action_parameters0[1] << std::endl;
+                            break;
+                        case 3:
                             std::cout << "ERROR COMMAND";
                             return;
                     }
@@ -301,6 +294,10 @@ void Interpreter::run(std::string queries, std::vector<Table*>* READRESPONSE) {
                             std::cout << std::endl << query->action_parameters0[0] << std::endl;
                             break;
                         case 2:
+                            query->action_parameters0.push_back(token[i]);
+                            std::cout << std::endl << query->action_parameters0[1] << std::endl;
+                            break;
+                        case 3:
                             std::cout << "ERROR COMMAND";
                             return;
                     }
@@ -315,7 +312,7 @@ void Interpreter::run(std::string queries, std::vector<Table*>* READRESPONSE) {
         // Run queries
         Table* queryResponse = query->run(Database::get_instance());
         if (queryResponse != nullptr) {
-            READRESPONSE->push_back(queryResponse);
+            console_table_buffer->push_back(queryResponse);
         }
 
         delete query;

@@ -21,6 +21,6 @@ class Interpreter {
 
 public:
     static Interpreter* get_instance();
-    void run(std::string queries, std::vector<Table*>* READRESPONSE);
+    void run(std::string queries, std::vector<Table*>* console_table_buffer);
     std::vector<std::string> get_all_tokens();
 };

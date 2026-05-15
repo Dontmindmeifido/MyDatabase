@@ -4,7 +4,7 @@
 
 class IObserver {
 public:
-    virtual void update() = 0;
+    virtual void update(std::string database_file, std::string undo_key) = 0;
 };
 
 class Observer {
@@ -12,14 +12,15 @@ class Observer {
 
 public:
     void subscribe(IObserver* observer);
-    void notify();
+    void notify(std::string database_file, std::string undo_key);
 };
 
 class VersionControl: public IObserver {
     static VersionControl* instance;
 
     VersionControl() {};
+    
 public: 
     static VersionControl* get_instance();
-    void update() override;
+    void update(std::string database_file, std::string undo_key) override;
 };

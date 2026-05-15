@@ -10,6 +10,5 @@ class Lexer: public Parser {
 
 public:
     static Lexer* get_instance();
-
     std::vector<std::vector<std::string>> run(std::string queries);
 };

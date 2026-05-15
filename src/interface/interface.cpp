@@ -141,13 +141,13 @@ void Interface::render_editor_window(int buttonHeight) {
         std::cout << query_buffer << "\n";
         std::cout << "---------" << "\n";
 
-        for (auto table: *READRESPONSE) {
+        for (auto table: *console_table_buffer) {
             delete table; // Memory leak solve in query when creating the return table (sepcifically the new from 01Crud in readTable)
         }
         
-        READRESPONSE->clear();
+        console_table_buffer->clear();
         
-        interpreter->run(query_buffer, READRESPONSE);
+        interpreter->run(query_buffer, console_table_buffer);
     }
 
     ImGui::End();
@@ -163,9 +163,9 @@ void Interface::render_editor_console() {
     ImGui::PushStyleColor(ImGuiCol_TitleBgActive, ImGui::GetStyleColorVec4(ImGuiCol_TitleBg));
     ImGui::Begin("Console", NULL, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize);
 
-    if (READRESPONSE->size() != 0) {
+    if (console_table_buffer->size() != 0) {
         ImVec2 cursor = ImGui::GetCursorScreenPos();
-        Table& table = *((*READRESPONSE)[0]);
+        Table& table = *((*console_table_buffer)[0]);
         int w = (ImGui::GetIO().DisplaySize.x * 0.5 - 38) / std::min(10, int(table.get_rows()[0].get_cells().size())); // Soft limit on 10 visible cols
         ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(cursor.x, cursor.y), ImVec2(cursor.x + 20 - 1, cursor.y + 20 - 1), IM_COL32(30, 30, 30, 255));
         for (int j = 1; j < (int)table.get_rows().size(); j++) {
@@ -200,7 +200,7 @@ void Interface::render_editor_console() {
 }
 
 Interface::Interface() {
-    this->READRESPONSE = new std::vector<Table*>;
+    this->console_table_buffer = new std::vector<Table*>;
 }
 
 Interface* Interface::get_instance() {
